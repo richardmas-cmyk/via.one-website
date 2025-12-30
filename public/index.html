@@ -10,47 +10,201 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="background-gradient"></div>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="#home" class="nav-logo">via<span class="dot">.</span>one</a>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#services">Services</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#technology">Technology</a></li>
+                <li><a href="#network">Network</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+            <button class="nav-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
 
-    <main class="container">
-        <div class="logo-section">
-            <div class="logo">
+    <!-- Hero Section -->
+    <header id="home" class="hero">
+        <div class="hero-content">
+            <div class="logo-main">
                 <span class="logo-via">via</span><span class="logo-dot">.</span><span class="logo-one">one</span>
-                <div class="logo-swirl">
-                    <svg viewBox="0 0 60 40" class="swirl-svg">
-                        <path d="M5 30 Q15 10, 30 20 T55 15" stroke="url(#gradient1)" stroke-width="4" fill="none" stroke-linecap="round"/>
-                        <defs>
-                            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" style="stop-color:#10b981"/>
-                                <stop offset="50%" style="stop-color:#0ea5e9"/>
-                                <stop offset="100%" style="stop-color:#f59e0b"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
+            </div>
+            <h1>Connecting Lives, Building Futures</h1>
+            <p class="tagline">Your World, Simplified</p>
+            <a href="#contact" class="btn-primary">Get Started</a>
+        </div>
+    </header>
+
+    <!-- Services Section -->
+    <section id="services" class="section">
+        <div class="container">
+            <h2>Our Services</h2>
+            <div class="service-cards">
+                <div class="card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                        </svg>
+                    </div>
+                    <h3>Mobile Airtime Top-Ups</h3>
+                    <p>Instant top-ups for carriers in Mexico, Bangladesh, Philippines, and more. Supports Telefonica, BAIT, Telcel, Altan Redes.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                    </div>
+                    <h3>International Bill Payments</h3>
+                    <p>Pay bills across LATAM and US with secure integrations. Partners include TAECEL, Supreme Ventures, and more.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="8" width="18" height="12" rx="2"></rect>
+                            <path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"></path>
+                            <line x1="12" y1="12" x2="12" y2="16"></line>
+                            <line x1="10" y1="14" x2="14" y2="14"></line>
+                        </svg>
+                    </div>
+                    <h3>International Gift Cards</h3>
+                    <p>Gift card remittance via OXXO in Mexico and 90k POS in Peru for supermarkets, pharmacies.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                    </div>
+                    <h3>Cross-Border Payments</h3>
+                    <p>Text-first transfers via SMS or WhatsApp with USDC settlement. Non-custodial, with virtual debit cards or cash pickup.</p>
                 </div>
             </div>
         </div>
+    </section>
 
-        <div class="tagline">
-            <h1>Connecting Lives, Building Futures</h1>
-            <p>Your World, Simplified</p>
+    <!-- About Section -->
+    <section id="about" class="section section-dark">
+        <div class="container">
+            <h2>About Via.One</h2>
+            <p class="about-text">Via.One is a leading platform for cross-border payments, mobile airtime, bill payments, and gift cards. Founded to simplify global connectivity.</p>
+
+            <h3>Our Team</h3>
+            <div class="team">
+                <div class="member">
+                    <div class="member-avatar">RM</div>
+                    <h4>Richard Mas</h4>
+                    <p>Executive</p>
+                </div>
+                <div class="member">
+                    <div class="member-avatar">PR</div>
+                    <h4>Peter Rinfret</h4>
+                    <p>Executive</p>
+                </div>
+            </div>
         </div>
+    </section>
 
-        <div class="coming-soon">
-            <div class="badge">Coming Soon</div>
-            <p>We're working on something amazing. Stay tuned.</p>
+    <!-- Technology Section -->
+    <section id="technology" class="section">
+        <div class="container">
+            <h2>Our Technology</h2>
+            <div class="tech-grid">
+                <div class="tech-item">Node.js</div>
+                <div class="tech-item">Express</div>
+                <div class="tech-item">PostgreSQL</div>
+                <div class="tech-item">React</div>
+                <div class="tech-item">Multi-tenant SaaS</div>
+                <div class="tech-item">DeFi Wallets</div>
+                <div class="tech-item">Real-time Analytics</div>
+                <div class="tech-item">Secure APIs</div>
+            </div>
+            <p class="tech-description">Built with modern technologies to support multi-tenant SaaS, DeFi wallets, and real-time analytics.</p>
         </div>
+    </section>
 
-        <div class="contact-info">
-            <p class="address">
-                101 N. Tryon St., Suite 600<br>
-                Charlotte, NC 28202
-            </p>
+    <!-- Network Section -->
+    <section id="network" class="section section-dark">
+        <div class="container">
+            <h2>Our Global Network</h2>
+            <div class="network-grid">
+                <div class="network-region">
+                    <h4>Mexico</h4>
+                    <p>OXXO, Telcel, TAECEL</p>
+                </div>
+                <div class="network-region">
+                    <h4>Peru</h4>
+                    <p>90k+ POS locations</p>
+                </div>
+                <div class="network-region">
+                    <h4>Venezuela</h4>
+                    <p>Regional partners</p>
+                </div>
+                <div class="network-region">
+                    <h4>USA</h4>
+                    <p>Headquarters</p>
+                </div>
+            </div>
+            <p class="network-partners">Partners include LATCOM, OXXO, ProPay, CSQ, and more.</p>
         </div>
-    </main>
+    </section>
 
+    <!-- Contact Section -->
+    <section id="contact" class="section">
+        <div class="container">
+            <h2>Contact Us</h2>
+            <p class="contact-address">101 N. Tryon St., Suite 600, Charlotte, NC 28202</p>
+            <form class="contact-form" action="#" method="POST">
+                <input type="text" name="name" placeholder="Name" required>
+                <input type="email" name="email" placeholder="Email" required>
+                <textarea name="message" placeholder="Message" rows="5" required></textarea>
+                <button type="submit" class="btn-primary">Send Message</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
     <footer>
-        <p>&copy; 2025 Via.One. All rights reserved.</p>
+        <div class="container">
+            <div class="footer-logo">via<span class="dot">.</span>one</div>
+            <p>&copy; 2025 Via.One. All rights reserved.</p>
+        </div>
     </footer>
+
+    <script>
+        // Mobile nav toggle
+        const navToggle = document.querySelector('.nav-toggle');
+        const navLinks = document.querySelector('.nav-links');
+        navToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            navToggle.classList.toggle('active');
+        });
+
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                    navLinks.classList.remove('active');
+                    navToggle.classList.remove('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
