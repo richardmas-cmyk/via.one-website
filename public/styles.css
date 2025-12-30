@@ -45,18 +45,9 @@ body {
     min-height: 100vh;
 }
 
-/* Watermark */
+/* Watermark - subtle text watermark */
 .watermark {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 60vw;
-    height: 60vh;
-    background: url('logo.png') center/contain no-repeat;
-    opacity: 0.03;
-    pointer-events: none;
-    z-index: 0;
+    display: none; /* Hidden until logo image is added */
 }
 
 /* Navigation */
@@ -83,11 +74,18 @@ body {
 .nav-logo {
     display: flex;
     align-items: center;
+    text-decoration: none;
+    font-size: 1.5rem;
+    font-weight: 700;
 }
 
-.nav-logo-img {
-    height: 40px;
-    width: auto;
+.nav-logo .logo-via,
+.nav-logo .logo-one {
+    color: var(--navy);
+}
+
+.nav-logo .logo-dot {
+    color: var(--teal);
 }
 
 .nav-links {
@@ -143,10 +141,18 @@ body {
 }
 
 .hero-logo {
-    max-width: 400px;
-    width: 100%;
-    height: auto;
     margin-bottom: 1.5rem;
+    font-size: 4.5rem;
+    font-weight: 700;
+}
+
+.hero-logo .logo-via,
+.hero-logo .logo-one {
+    color: var(--navy);
+}
+
+.hero-logo .logo-dot {
+    color: var(--teal);
 }
 
 .hero h1 {
@@ -446,12 +452,19 @@ footer {
     z-index: 1;
 }
 
-.footer-logo-img {
-    height: 50px;
-    width: auto;
+.footer-logo {
+    font-size: 1.75rem;
+    font-weight: 700;
     margin-bottom: 1rem;
-    filter: brightness(0) invert(1);
-    opacity: 0.9;
+}
+
+.footer-logo .logo-via,
+.footer-logo .logo-one {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.footer-logo .logo-dot {
+    color: var(--teal);
 }
 
 footer p {
@@ -495,7 +508,7 @@ footer p {
     }
 
     .hero-logo {
-        max-width: 280px;
+        font-size: 3rem;
     }
 
     .hero h1 {
