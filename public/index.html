@@ -7,12 +7,9 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Logo Watermark -->
-    <div class="watermark"></div>
-
     <!-- Navigation -->
     <nav class="nav">
         <div class="nav-container">
@@ -22,8 +19,9 @@
             <ul class="nav-links">
                 <li><a href="#home">Home</a></li>
                 <li><a href="#services">Services</a></li>
-                <li><a href="#platform">Platform</a></li>
+                <li><a href="#why-us">Why Us</a></li>
                 <li><a href="#network">Network</a></li>
+                <li><a href="#team">Team</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>
             <button class="nav-toggle" aria-label="Toggle menu">
@@ -37,132 +35,86 @@
     <!-- Hero Section -->
     <header id="home" class="hero">
         <div class="hero-content">
-            <div class="hero-logo">
+            <div class="hero-logo animate-fade-in">
                 <span class="logo-via">via</span><span class="logo-dot">.</span><span class="logo-one">one</span>
             </div>
-            <h1>Connecting Lives, Building Futures</h1>
-            <p class="tagline">Your World, Simplified</p>
-            <a href="#contact" class="btn-primary">Get Started</a>
+            <h1 class="animate-slide-up">Connecting Lives, Building Futures</h1>
+            <p class="tagline animate-slide-up delay-1">Your World, Simplified</p>
+            <a href="#contact" class="cta-button animate-bounce-in delay-2">Get Started Now</a>
+        </div>
+        <div class="hero-stats">
+            <div class="stat animate-fade-in delay-2">
+                <h2>20+</h2>
+                <p>TPS</p>
+            </div>
+            <div class="stat animate-fade-in delay-3">
+                <h2>102</h2>
+                <p>Database Tables</p>
+            </div>
+            <div class="stat animate-fade-in delay-4">
+                <h2>13</h2>
+                <p>Providers</p>
+            </div>
+            <div class="stat animate-fade-in delay-5">
+                <h2>80+</h2>
+                <p>Blockchain Networks</p>
+            </div>
         </div>
     </header>
 
     <!-- Services Section -->
     <section id="services" class="section">
         <div class="container">
-            <h2>Our Services</h2>
-            <div class="service-cards">
-                <div class="card">
-                    <div class="card-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                            <line x1="12" y1="18" x2="12.01" y2="18"></line>
-                        </svg>
-                    </div>
+            <h2 class="section-title">Our Innovative Services</h2>
+            <div class="service-grid">
+                <div class="service-card">
+                    <div class="icon">📱</div>
                     <h3>Mobile Airtime Top-Ups</h3>
-                    <p>Instant top-ups for carriers in Mexico, Bangladesh, Philippines, and more. Supports Telefonica, BAIT, Telcel, Altan Redes.</p>
+                    <p>Instant global top-ups for carriers like Telefonica, BAIT, Telcel, Altan in Mexico, Bangladesh, Philippines. Fast, reliable, and seamless.</p>
                 </div>
-                <div class="card">
-                    <div class="card-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                        </svg>
-                    </div>
+                <div class="service-card">
+                    <div class="icon">💳</div>
                     <h3>International Bill Payments</h3>
-                    <p>Pay bills across LATAM and US with secure integrations. Partners include TAECEL, Supreme Ventures, and more.</p>
+                    <p>Effortless bill payments across LATAM and US. Integrated with TAECEL, Supreme Ventures, and more for secure transactions.</p>
                 </div>
-                <div class="card">
-                    <div class="card-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="8" width="18" height="12" rx="2"></rect>
-                            <path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"></path>
-                            <line x1="12" y1="12" x2="12" y2="16"></line>
-                            <line x1="10" y1="14" x2="14" y2="14"></line>
-                        </svg>
-                    </div>
+                <div class="service-card">
+                    <div class="icon">🎁</div>
                     <h3>International Gift Cards</h3>
-                    <p>Gift card remittance via OXXO in Mexico and 90k POS in Peru for supermarkets, pharmacies.</p>
+                    <p>Remittance via OXXO in Mexico and 90k+ POS in Peru. Perfect for supermarkets, pharmacies, and more.</p>
                 </div>
-                <div class="card">
-                    <div class="card-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="2" y1="12" x2="22" y2="12"></line>
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                        </svg>
-                    </div>
+                <div class="service-card">
+                    <div class="icon">🌐</div>
                     <h3>Cross-Border Payments</h3>
-                    <p>Text-first transfers via SMS or WhatsApp with USDC settlement. Non-custodial, with virtual debit cards or cash pickup.</p>
+                    <p>Text-first via SMS/WhatsApp with USDC settlement. Non-custodial, virtual cards or cash pickup options.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Platform Section -->
-    <section id="platform" class="section section-alt">
+    <!-- Why Us Section -->
+    <section id="why-us" class="section section-alt">
         <div class="container">
-            <h2>The Via.One Platform</h2>
-            <p class="platform-intro">A unified gateway connecting families across borders with the financial services they need most.</p>
-
-            <div class="features-grid">
-                <div class="feature">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                        </svg>
-                    </div>
-                    <h4>Secure & Compliant</h4>
-                    <p>Bank-grade security with full regulatory compliance across all operating regions.</p>
+            <h2 class="section-title">Why Choose Via.One?</h2>
+            <div class="why-grid">
+                <div class="why-item">
+                    <div class="why-icon">🌍</div>
+                    <h3>Global Reach</h3>
+                    <p>107+ Providers, 133+ Integrations, 107K+ Potential Reach</p>
                 </div>
-                <div class="feature">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
-                    </div>
-                    <h4>Real-Time Processing</h4>
-                    <p>Instant transactions with live confirmation. No delays, no waiting.</p>
+                <div class="why-item">
+                    <div class="why-icon">⚡</div>
+                    <h3>Instant Delivery</h3>
+                    <p>Real-time transactions with 99% success in seconds</p>
                 </div>
-                <div class="feature">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                    </div>
-                    <h4>Multi-Tenant Architecture</h4>
-                    <p>White-label solutions for partners to launch their own branded services.</p>
+                <div class="why-item">
+                    <div class="why-icon">🔒</div>
+                    <h3>Secure & Compliant</h3>
+                    <p>KYC, AML, and end-to-end audit trails</p>
                 </div>
-                <div class="feature">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                            <line x1="1" y1="10" x2="23" y2="10"></line>
-                        </svg>
-                    </div>
-                    <h4>Multiple Payout Options</h4>
-                    <p>Cash pickup, bank deposit, mobile wallets, or virtual debit cards.</p>
-                </div>
-            </div>
-
-            <div class="team-section">
-                <h3>Leadership</h3>
-                <div class="team">
-                    <div class="member">
-                        <div class="member-avatar">RM</div>
-                        <h4>Richard Mas</h4>
-                        <p>Executive</p>
-                    </div>
-                    <div class="member">
-                        <div class="member-avatar">PR</div>
-                        <h4>Peter Rinfret</h4>
-                        <p>Executive</p>
-                    </div>
+                <div class="why-item">
+                    <div class="why-icon">🚀</div>
+                    <h3>Innovative Tech</h3>
+                    <p>Single API, DeFi Wallets, Multi-Tenant SaaS</p>
                 </div>
             </div>
         </div>
@@ -171,8 +123,8 @@
     <!-- Network Section -->
     <section id="network" class="section">
         <div class="container">
-            <h2>Our Global Network</h2>
-            <p class="network-intro">Extensive partnerships enabling seamless transactions across the Americas and beyond.</p>
+            <h2 class="section-title">Our Expansive Global Network</h2>
+            <p class="section-subtitle">Connecting across the Americas and worldwide with top partners</p>
             <div class="network-grid">
                 <div class="network-region">
                     <h4>Mexico</h4>
@@ -203,27 +155,46 @@
         </div>
     </section>
 
-    <!-- Contact Section -->
-    <section id="contact" class="section section-alt">
+    <!-- Team Section -->
+    <section id="team" class="section section-alt">
         <div class="container">
-            <h2>Contact Us</h2>
+            <h2 class="section-title">Meet Our Leaders</h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <div class="profile-img">RM</div>
+                    <h3>Richard Mas</h3>
+                    <p>Executive Leader</p>
+                </div>
+                <div class="team-member">
+                    <div class="profile-img">PR</div>
+                    <h3>Peter Rinfret</h3>
+                    <p>Executive Leader</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="section">
+        <div class="container">
+            <h2 class="section-title">Get in Touch</h2>
             <p class="contact-address">101 N. Tryon St., Suite 600<br>Charlotte, NC 28202</p>
-            <form class="contact-form" action="#" method="POST">
-                <input type="text" name="name" placeholder="Name" required>
-                <input type="email" name="email" placeholder="Email" required>
-                <textarea name="message" placeholder="Message" rows="5" required></textarea>
-                <button type="submit" class="btn-primary">Send Message</button>
+            <form class="contact-form">
+                <input type="text" name="name" placeholder="Your Name" required>
+                <input type="email" name="email" placeholder="Your Email" required>
+                <textarea name="message" placeholder="Your Message" rows="5" required></textarea>
+                <button type="submit" class="cta-button">Send Message</button>
             </form>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer>
+    <footer class="footer">
         <div class="container">
             <div class="footer-logo">
                 <span class="logo-via">via</span><span class="logo-dot">.</span><span class="logo-one">one</span>
             </div>
-            <p>&copy; 2025 Via.One. All rights reserved.</p>
+            <p>&copy; 2025 Via.One. All rights reserved. Connecting Lives, Building Futures.</p>
         </div>
     </footer>
 
@@ -247,6 +218,20 @@
                     navToggle.classList.remove('active');
                 }
             });
+        });
+
+        // Intersection Observer for animations
+        const observerOptions = { threshold: 0.1 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.service-card, .why-item, .network-region, .team-member').forEach(el => {
+            observer.observe(el);
         });
     </script>
 </body>
