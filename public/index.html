@@ -10,15 +10,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Logo Watermark -->
+    <div class="watermark"></div>
+
     <!-- Navigation -->
     <nav class="nav">
         <div class="nav-container">
-            <a href="#home" class="nav-logo">via<span class="dot">.</span>one</a>
+            <a href="#home" class="nav-logo">
+                <img src="logo.png" alt="Via.One" class="nav-logo-img">
+            </a>
             <ul class="nav-links">
                 <li><a href="#home">Home</a></li>
                 <li><a href="#services">Services</a></li>
-                <li><a href="#about">About</a></li>
-                <li><a href="#technology">Technology</a></li>
+                <li><a href="#platform">Platform</a></li>
                 <li><a href="#network">Network</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>
@@ -33,9 +37,7 @@
     <!-- Hero Section -->
     <header id="home" class="hero">
         <div class="hero-content">
-            <div class="logo-main">
-                <span class="logo-via">via</span><span class="logo-dot">.</span><span class="logo-one">one</span>
-            </div>
+            <img src="logo.png" alt="Via.One" class="hero-logo">
             <h1>Connecting Lives, Building Futures</h1>
             <p class="tagline">Your World, Simplified</p>
             <a href="#contact" class="btn-primary">Get Started</a>
@@ -96,58 +98,95 @@
         </div>
     </section>
 
-    <!-- About Section -->
-    <section id="about" class="section section-dark">
+    <!-- Platform Section -->
+    <section id="platform" class="section section-alt">
         <div class="container">
-            <h2>About Via.One</h2>
-            <p class="about-text">Via.One is a leading platform for cross-border payments, mobile airtime, bill payments, and gift cards. Founded to simplify global connectivity.</p>
+            <h2>The Via.One Platform</h2>
+            <p class="platform-intro">A unified gateway connecting families across borders with the financial services they need most.</p>
 
-            <h3>Our Team</h3>
-            <div class="team">
-                <div class="member">
-                    <div class="member-avatar">RM</div>
-                    <h4>Richard Mas</h4>
-                    <p>Executive</p>
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+                    <h4>Secure & Compliant</h4>
+                    <p>Bank-grade security with full regulatory compliance across all operating regions.</p>
                 </div>
-                <div class="member">
-                    <div class="member-avatar">PR</div>
-                    <h4>Peter Rinfret</h4>
-                    <p>Executive</p>
+                <div class="feature">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <h4>Real-Time Processing</h4>
+                    <p>Instant transactions with live confirmation. No delays, no waiting.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <h4>Multi-Tenant Architecture</h4>
+                    <p>White-label solutions for partners to launch their own branded services.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                    </div>
+                    <h4>Multiple Payout Options</h4>
+                    <p>Cash pickup, bank deposit, mobile wallets, or virtual debit cards.</p>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- Technology Section -->
-    <section id="technology" class="section">
-        <div class="container">
-            <h2>Our Technology</h2>
-            <div class="tech-grid">
-                <div class="tech-item">Node.js</div>
-                <div class="tech-item">Express</div>
-                <div class="tech-item">PostgreSQL</div>
-                <div class="tech-item">React</div>
-                <div class="tech-item">Multi-tenant SaaS</div>
-                <div class="tech-item">DeFi Wallets</div>
-                <div class="tech-item">Real-time Analytics</div>
-                <div class="tech-item">Secure APIs</div>
+            <div class="team-section">
+                <h3>Leadership</h3>
+                <div class="team">
+                    <div class="member">
+                        <div class="member-avatar">RM</div>
+                        <h4>Richard Mas</h4>
+                        <p>Executive</p>
+                    </div>
+                    <div class="member">
+                        <div class="member-avatar">PR</div>
+                        <h4>Peter Rinfret</h4>
+                        <p>Executive</p>
+                    </div>
+                </div>
             </div>
-            <p class="tech-description">Built with modern technologies to support multi-tenant SaaS, DeFi wallets, and real-time analytics.</p>
         </div>
     </section>
 
     <!-- Network Section -->
-    <section id="network" class="section section-dark">
+    <section id="network" class="section">
         <div class="container">
             <h2>Our Global Network</h2>
+            <p class="network-intro">Extensive partnerships enabling seamless transactions across the Americas and beyond.</p>
             <div class="network-grid">
                 <div class="network-region">
                     <h4>Mexico</h4>
-                    <p>OXXO, Telcel, TAECEL</p>
+                    <p>OXXO, Telcel, TAECEL, BAIT</p>
                 </div>
                 <div class="network-region">
                     <h4>Peru</h4>
                     <p>90k+ POS locations</p>
+                </div>
+                <div class="network-region">
+                    <h4>Philippines</h4>
+                    <p>Mobile carriers & remittance</p>
+                </div>
+                <div class="network-region">
+                    <h4>Bangladesh</h4>
+                    <p>Airtime & transfers</p>
                 </div>
                 <div class="network-region">
                     <h4>Venezuela</h4>
@@ -155,18 +194,18 @@
                 </div>
                 <div class="network-region">
                     <h4>USA</h4>
-                    <p>Headquarters</p>
+                    <p>Headquarters - Charlotte, NC</p>
                 </div>
             </div>
-            <p class="network-partners">Partners include LATCOM, OXXO, ProPay, CSQ, and more.</p>
+            <p class="network-partners">Partners include LATCOM, OXXO, ProPay, CSQ, Supreme Ventures, and more.</p>
         </div>
     </section>
 
     <!-- Contact Section -->
-    <section id="contact" class="section">
+    <section id="contact" class="section section-alt">
         <div class="container">
             <h2>Contact Us</h2>
-            <p class="contact-address">101 N. Tryon St., Suite 600, Charlotte, NC 28202</p>
+            <p class="contact-address">101 N. Tryon St., Suite 600<br>Charlotte, NC 28202</p>
             <form class="contact-form" action="#" method="POST">
                 <input type="text" name="name" placeholder="Name" required>
                 <input type="email" name="email" placeholder="Email" required>
@@ -179,7 +218,7 @@
     <!-- Footer -->
     <footer>
         <div class="container">
-            <div class="footer-logo">via<span class="dot">.</span>one</div>
+            <img src="logo.png" alt="Via.One" class="footer-logo-img">
             <p>&copy; 2025 Via.One. All rights reserved.</p>
         </div>
     </footer>
