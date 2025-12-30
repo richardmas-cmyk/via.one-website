@@ -64,13 +64,14 @@ body {
 }
 
 .nav-logo {
-    text-decoration: none;
-    font-size: 1.5rem;
-    font-weight: 700;
+    display: flex;
+    align-items: center;
 }
 
-.logo-via, .logo-one { color: var(--navy); }
-.logo-dot { color: var(--teal); }
+.nav-logo-img {
+    height: 45px;
+    width: auto;
+}
 
 .nav-links {
     display: flex;
@@ -121,9 +122,10 @@ body {
 }
 
 .hero-logo {
-    font-size: 5rem;
-    font-weight: 800;
-    margin-bottom: 1.5rem;
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+    margin-bottom: 2rem;
 }
 
 .hero h1 {
@@ -468,19 +470,12 @@ body {
     text-align: center;
 }
 
-.footer-logo {
-    font-size: 2rem;
-    font-weight: 700;
+.footer-logo-img {
+    height: 60px;
+    width: auto;
     margin-bottom: 1rem;
-}
-
-.footer .logo-via,
-.footer .logo-one {
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.footer .logo-dot {
-    color: var(--teal);
+    filter: brightness(0) invert(1);
+    opacity: 0.9;
 }
 
 .footer p {
@@ -549,7 +544,7 @@ body {
         transform: rotate(-45deg) translate(5px, -5px);
     }
 
-    .hero-logo { font-size: 3rem; }
+    .hero-logo { max-width: 280px; }
     .hero h1 { font-size: 1.75rem; }
     .hero .tagline { font-size: 1.1rem; }
 
