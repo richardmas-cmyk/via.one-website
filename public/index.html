@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Via One - Multi-Rail Settlement Infrastructure for LATAM</title>
-    <meta name="description" content="Via One powers instant cross-border payments across 94,000+ locations in Latin America. Stablecoin rails, treasury yield, and compliance built-in.">
+    <title>Via One - One-Stop Payment Infrastructure for Bodegas, Retailers & Enterprises</title>
+    <meta name="description" content="Empower your store with US topups, bill payments, and international transfers in one platform. No more sending customers to 2-3 shops. 62K+ US locations, 94K+ LATAM points.">
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -205,7 +205,7 @@
         .hero-subtitle {
             font-size: clamp(1.1rem, 2vw, 1.4rem);
             color: var(--gray-400);
-            max-width: 700px;
+            max-width: 750px;
             margin: 0 auto 2.5rem;
             animation: fadeInUp 0.6s ease 0.2s both;
         }
@@ -352,6 +352,92 @@
             opacity: 1;
         }
 
+        /* Value Proposition Section */
+        .value-prop {
+            padding: 6rem 2rem;
+            background: linear-gradient(180deg, rgba(34, 197, 94, 0.03), transparent);
+        }
+
+        .value-prop-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .value-text h2 {
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .value-text h2 span {
+            background: linear-gradient(135deg, var(--green), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .value-text p {
+            color: var(--gray-400);
+            font-size: 1.15rem;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        .value-points {
+            list-style: none;
+        }
+
+        .value-points li {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            color: var(--gray-300);
+        }
+
+        .value-points li svg {
+            flex-shrink: 0;
+            margin-top: 4px;
+            color: var(--green);
+        }
+
+        .value-visual {
+            position: relative;
+        }
+
+        .value-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 3rem;
+            text-align: center;
+        }
+
+        .value-card-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, var(--green), var(--cyan));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .value-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .value-card p {
+            color: var(--gray-400);
+        }
+
         /* Features Section */
         .features {
             padding: 8rem 2rem;
@@ -432,14 +518,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
             margin-bottom: 1.5rem;
         }
 
-        .feature-icon.green { background: rgba(34, 197, 94, 0.15); }
-        .feature-icon.cyan { background: rgba(6, 182, 212, 0.15); }
-        .feature-icon.orange { background: rgba(249, 115, 22, 0.15); }
-        .feature-icon.blue { background: rgba(59, 130, 246, 0.15); }
+        .feature-icon svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .feature-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+        .feature-icon.cyan { background: rgba(6, 182, 212, 0.15); color: var(--cyan); }
+        .feature-icon.orange { background: rgba(249, 115, 22, 0.15); color: var(--orange); }
+        .feature-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
 
         .feature-card h3 {
             font-size: 1.4rem;
@@ -529,7 +619,7 @@
 
         .coverage-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1.5rem;
             margin-top: 4rem;
         }
@@ -560,6 +650,7 @@
         .coverage-card p {
             color: var(--gray-400);
             font-size: 0.9rem;
+            line-height: 1.6;
         }
 
         .coverage-stat {
@@ -752,6 +843,10 @@
                 font-size: 2rem;
             }
 
+            .value-prop-content {
+                grid-template-columns: 1fr;
+            }
+
             .footer-content {
                 grid-template-columns: 1fr 1fr;
             }
@@ -803,8 +898,8 @@
                 <img src="logo.png" alt="Via One">
             </a>
             <ul class="nav-links" id="navLinks">
+                <li><a href="#value">Why Via One</a></li>
                 <li><a href="#features">Platform</a></li>
-                <li><a href="#how-it-works">How It Works</a></li>
                 <li><a href="#coverage">Coverage</a></li>
                 <li><a href="#contact">Contact</a></li>
                 <li class="nav-cta-mobile"><a href="mailto:investors@via.one" class="nav-cta">Talk to Founders</a></li>
@@ -825,16 +920,16 @@
 
         <div class="hero-content">
             <div class="hero-badge">
-                <span>Now Live in 6 Countries</span>
+                <span>B2B Payment Infrastructure for Retailers</span>
             </div>
 
             <h1>
-                Multi-Rail Settlement<br>
-                <span>Infrastructure for LATAM</span>
+                One Platform. All Payments.<br>
+                <span>For Bodegas to Enterprise</span>
             </h1>
 
             <p class="hero-subtitle">
-                Power instant cross-border payments, airtime top-ups, and bill payments across 94,000+ physical locations. Stablecoin rails, treasury yield, and compliance built-in.
+                Empower your store or chain with US topups, international bill payments, and remittances in one place. Stop sending customers to 2-3 different shops. Consolidate everything through Via One.
             </p>
 
             <div class="hero-buttons">
@@ -849,16 +944,16 @@
 
             <div class="stats-bar">
                 <div class="stat">
+                    <div class="stat-value">62K+</div>
+                    <div class="stat-label">US Retail Locations</div>
+                </div>
+                <div class="stat">
                     <div class="stat-value">94K+</div>
-                    <div class="stat-label">Physical Locations</div>
+                    <div class="stat-label">LATAM Cash Points</div>
                 </div>
                 <div class="stat">
                     <div class="stat-value">107+</div>
                     <div class="stat-label">Provider Integrations</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">6</div>
-                    <div class="stat-label">Countries Live</div>
                 </div>
                 <div class="stat">
                     <div class="stat-value">99.2%</div>
@@ -870,15 +965,71 @@
 
     <!-- Partners -->
     <section class="partners">
-        <p class="partners-label">Trusted by Industry Leaders</p>
+        <p class="partners-label">Carrier & Network Partners</p>
         <div class="partners-grid">
-            <span class="partner-logo">OXXO</span>
-            <span class="partner-logo">LATCOM</span>
             <span class="partner-logo">Telcel</span>
+            <span class="partner-logo">Claro</span>
             <span class="partner-logo">Movistar</span>
-            <span class="partner-logo">TAECEL</span>
-            <span class="partner-logo">CSQ</span>
-            <span class="partner-logo">ProPay</span>
+            <span class="partner-logo">AT&T</span>
+            <span class="partner-logo">BITEL</span>
+            <span class="partner-logo">Altán Redes</span>
+            <span class="partner-logo">Tigo</span>
+            <span class="partner-logo">Digicel</span>
+        </div>
+    </section>
+
+    <!-- Value Proposition for B2B -->
+    <section class="value-prop" id="value">
+        <div class="value-prop-content animate-on-scroll">
+            <div class="value-text">
+                <h2>Stop Losing Customers to <span>Fractured Payments</span></h2>
+                <p>
+                    Today, your customers visit multiple shops to send money home, top up phones, and pay bills.
+                    Via One consolidates everything into one terminal, one integration, one relationship.
+                </p>
+                <ul class="value-points">
+                    <li>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        <span><strong>US Mobile Topups</strong> - All major carriers plus international recharges from one POS</span>
+                    </li>
+                    <li>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        <span><strong>International Bill Pay</strong> - Utilities, internet, and services across LATAM</span>
+                    </li>
+                    <li>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        <span><strong>Cross-Border Payouts</strong> - Cash pickup, bank deposit, mobile wallet delivery</span>
+                    </li>
+                    <li>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        <span><strong>One Integration</strong> - Single API for bodegas, chains, and enterprises</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="value-visual">
+                <div class="value-card">
+                    <div class="value-card-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                    </div>
+                    <h3>Built for Bodegas & Retailers</h3>
+                    <p>From corner stores to national chains, Via One powers your payment services with enterprise-grade infrastructure.</p>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -886,48 +1037,78 @@
     <section class="features" id="features">
         <div class="section-header">
             <span class="section-label">Platform Capabilities</span>
-            <h2 class="section-title">Everything You Need to Move Money in LATAM</h2>
-            <p class="section-subtitle">A unified API connecting traditional rails, stablecoin settlement, and 94K+ cash-in/cash-out points.</p>
+            <h2 class="section-title">Everything You Need to Serve Your Customers</h2>
+            <p class="section-subtitle">A unified platform connecting US retail to LATAM with 94K+ cash points and real-time settlement.</p>
         </div>
 
         <div class="features-grid">
             <div class="feature-card animate-on-scroll">
-                <div class="feature-icon green">&#9889;</div>
+                <div class="feature-icon green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                </div>
                 <h3>Instant Settlement</h3>
                 <p>Real-time transaction processing with multi-rail routing. ACH, wire, stablecoin - we automatically select the fastest, cheapest path.</p>
-                <span class="feature-tag">< 15 min settlement</span>
+                <span class="feature-tag">&lt; 15 min settlement</span>
             </div>
 
             <div class="feature-card animate-on-scroll">
-                <div class="feature-icon cyan">&#127760;</div>
-                <h3>94K+ Cash Points</h3>
-                <p>OXXO, convenience stores, pharmacies, and POS terminals across Mexico, Peru, and beyond. Cash-in and cash-out at scale.</p>
-                <span class="feature-tag">LATAM Coverage</span>
+                <div class="feature-icon cyan">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                </div>
+                <h3>62K+ US Locations</h3>
+                <p>Direct and indirect access to over 62,000 retail locations across the United States. Power your existing network or join ours.</p>
+                <span class="feature-tag">Nationwide Coverage</span>
             </div>
 
             <div class="feature-card animate-on-scroll">
-                <div class="feature-icon orange">&#128176;</div>
+                <div class="feature-icon orange">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"/>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                </div>
                 <h3>Treasury Yield</h3>
                 <p>Earn yield on float through automated treasury management. Your settlement funds work for you while in transit.</p>
                 <span class="feature-tag">Up to 7% APY</span>
             </div>
 
             <div class="feature-card animate-on-scroll">
-                <div class="feature-icon blue">&#128274;</div>
+                <div class="feature-icon blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
                 <h3>Built-in Compliance</h3>
                 <p>KYC, KYB, AML, and OFAC screening integrated via API. Real-time sanctions checking and audit trails included.</p>
                 <span class="feature-tag">OFAC + AML Ready</span>
             </div>
 
             <div class="feature-card animate-on-scroll">
-                <div class="feature-icon green">&#128241;</div>
+                <div class="feature-icon green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                        <line x1="12" y1="18" x2="12.01" y2="18"/>
+                    </svg>
+                </div>
                 <h3>Mobile Top-Ups</h3>
-                <p>Instant airtime and data packages for Telcel, Movistar, AT&T, BAIT, and 100+ carriers across LATAM and beyond.</p>
+                <p>Instant airtime and data packages for Telcel, Movistar, Claro, AT&T, BITEL, Altán Redes, and 100+ carriers across LATAM.</p>
                 <span class="feature-tag">100+ Carriers</span>
             </div>
 
             <div class="feature-card animate-on-scroll">
-                <div class="feature-icon cyan">&#128187;</div>
+                <div class="feature-icon cyan">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="3" y1="9" x2="21" y2="9"/>
+                        <line x1="9" y1="21" x2="9" y2="9"/>
+                    </svg>
+                </div>
                 <h3>White-Label SaaS</h3>
                 <p>Multi-tenant platform with full branding. Launch your own remittance or fintech product in weeks, not months.</p>
                 <span class="feature-tag">Your Brand</span>
@@ -947,26 +1128,26 @@
             <div class="flow-container">
                 <div class="flow-step animate-on-scroll">
                     <div class="flow-number">1</div>
-                    <h4>Payin</h4>
-                    <p>ACH, Wire, Card, or Stablecoin</p>
+                    <h4>Customer Walks In</h4>
+                    <p>Cash, card, or digital at your POS</p>
                 </div>
                 <span class="flow-arrow">&#8594;</span>
                 <div class="flow-step animate-on-scroll">
                     <div class="flow-number">2</div>
                     <h4>Smart Routing</h4>
-                    <p>Best rate, fastest path</p>
+                    <p>Best rate, fastest path selected</p>
                 </div>
                 <span class="flow-arrow">&#8594;</span>
                 <div class="flow-step animate-on-scroll">
                     <div class="flow-number">3</div>
-                    <h4>Settlement</h4>
-                    <p>Treasury-optimized float</p>
+                    <h4>Instant Processing</h4>
+                    <p>Topup, bill pay, or transfer</p>
                 </div>
                 <span class="flow-arrow">&#8594;</span>
                 <div class="flow-step animate-on-scroll">
                     <div class="flow-number">4</div>
-                    <h4>Payout</h4>
-                    <p>Cash, bank, mobile wallet</p>
+                    <h4>Delivery</h4>
+                    <p>Airtime, bank, wallet, or cash</p>
                 </div>
             </div>
         </div>
@@ -977,50 +1158,71 @@
         <div class="section-header">
             <span class="section-label">Global Reach</span>
             <h2 class="section-title">Live Across the Americas</h2>
-            <p class="section-subtitle">Expanding coverage with local partnerships in key remittance corridors.</p>
+            <p class="section-subtitle">Deep integrations in key remittance corridors with local carrier and payout partnerships.</p>
         </div>
 
         <div class="coverage-grid">
             <div class="coverage-card animate-on-scroll">
+                <div class="coverage-flag">&#127482;&#127480;</div>
+                <h4>United States</h4>
+                <p>HQ in Charlotte, NC. Direct/indirect access to retail networks nationwide for topups and bill payments.</p>
+                <div class="coverage-stat">62,000+ locations</div>
+            </div>
+
+            <div class="coverage-card animate-on-scroll">
                 <div class="coverage-flag">&#127474;&#127485;</div>
                 <h4>Mexico</h4>
-                <p>OXXO, Telcel, TAECEL, BAIT, Movistar integration</p>
-                <div class="coverage-stat">62,000+ locations</div>
+                <p>Telcel, Movistar, AT&T, BAIT, Altán Redes integration. OXXO, pharmacies, and convenience stores.</p>
+                <div class="coverage-stat">50,000+ locations</div>
             </div>
 
             <div class="coverage-card animate-on-scroll">
                 <div class="coverage-flag">&#127477;&#127466;</div>
                 <h4>Peru</h4>
-                <p>POS network, Yape Credit, mobile carriers</p>
+                <p>Movistar, BITEL, and Claro connected. Extensive POS network and mobile wallet support.</p>
                 <div class="coverage-stat">30,000+ locations</div>
             </div>
 
             <div class="coverage-card animate-on-scroll">
                 <div class="coverage-flag">&#127483;&#127466;</div>
                 <h4>Venezuela</h4>
-                <p>Servipagos, mobile top-ups, bill payments</p>
+                <p>All major mobile operators live. Cash payouts through our partner network across the country.</p>
+                <div class="coverage-stat">Full mobile coverage + Payouts</div>
+            </div>
+
+            <div class="coverage-card animate-on-scroll">
+                <div class="coverage-flag">&#127468;&#127481;</div>
+                <h4>Guatemala</h4>
+                <p>Tigo, Claro, and Movistar. Bill payments and mobile topups across urban and rural areas.</p>
                 <div class="coverage-stat">Key corridor</div>
+            </div>
+
+            <div class="coverage-card animate-on-scroll">
+                <div class="coverage-flag">&#127469;&#127475;</div>
+                <h4>Honduras</h4>
+                <p>Tigo and Claro integration with growing payout network for remittances.</p>
+                <div class="coverage-stat">Expanding</div>
+            </div>
+
+            <div class="coverage-card animate-on-scroll">
+                <div class="coverage-flag">&#127480;&#127483;</div>
+                <h4>El Salvador</h4>
+                <p>Full carrier coverage with Tigo, Claro, and Movistar. Bill pay and mobile services.</p>
+                <div class="coverage-stat">Active</div>
+            </div>
+
+            <div class="coverage-card animate-on-scroll">
+                <div class="coverage-flag">&#127466;&#127464;</div>
+                <h4>Ecuador</h4>
+                <p>Claro, Movistar, and CNT integration. Growing cash-in and cash-out network.</p>
+                <div class="coverage-stat">Expanding</div>
             </div>
 
             <div class="coverage-card animate-on-scroll">
                 <div class="coverage-flag">&#127477;&#127469;</div>
                 <h4>Philippines</h4>
-                <p>Mobile carriers, remittance partners</p>
-                <div class="coverage-stat">Expanding</div>
-            </div>
-
-            <div class="coverage-card animate-on-scroll">
-                <div class="coverage-flag">&#127463;&#127465;</div>
-                <h4>Bangladesh</h4>
-                <p>Airtime, mobile money transfers</p>
-                <div class="coverage-stat">Expanding</div>
-            </div>
-
-            <div class="coverage-card animate-on-scroll">
-                <div class="coverage-flag">&#127482;&#127480;</div>
-                <h4>United States</h4>
-                <p>HQ: Charlotte, NC. ACH, wire origination</p>
-                <div class="coverage-stat">Headquarters</div>
+                <p>Ayannah and GCash integration. Mobile carriers and remittance payout network.</p>
+                <div class="coverage-stat">Key corridor</div>
             </div>
         </div>
     </section>
@@ -1028,8 +1230,8 @@
     <!-- CTA Section -->
     <section class="cta-section" id="contact">
         <div class="cta-content">
-            <h2>Ready to Power Your Payments?</h2>
-            <p>Join the next generation of cross-border payment infrastructure. Talk to our founders today.</p>
+            <h2>Ready to Consolidate Your Payment Services?</h2>
+            <p>Join the next generation of B2B payment infrastructure. One platform for all your customers' needs.</p>
             <div class="hero-buttons">
                 <a href="mailto:investors@via.one" class="btn-primary">
                     <span>Talk to Founders</span>
@@ -1047,7 +1249,7 @@
         <div class="footer-content">
             <div class="footer-brand">
                 <img src="logo.png" alt="Via One">
-                <p>Multi-rail settlement infrastructure connecting the Americas. Instant payments, treasury yield, compliance built-in.</p>
+                <p>B2B payment infrastructure empowering bodegas, retailers, and enterprises with one-stop payment services across the Americas.</p>
             </div>
 
             <div class="footer-links">
