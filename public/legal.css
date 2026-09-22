@@ -1,0 +1,27 @@
+:root { --navy: #0a1628; --teal: #20B2AA; --gradient-end: #dbeef5; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #fff; }
+/* Legal pages (privacy, terms): readable, on-brand, prints cleanly. */
+.legal-nav { background: var(--navy); padding: 1rem 2rem; }
+.legal-nav .inner { max-width: 880px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.legal-nav img { height: 40px; width: auto; filter: brightness(0) invert(1); }
+.legal-nav a { color: #fff; text-decoration: none; font-weight: 600; font-size: 0.95rem; }
+.legal-nav a:hover { text-decoration: underline; }
+.legal { max-width: 880px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; color: #1f2937; font-size: 1.05rem; line-height: 1.7; }
+.legal h1 { color: var(--navy); font-size: 2.2rem; font-weight: 800; margin: 0 0 0.25rem; line-height: 1.2; }
+.legal .meta { color: #4b5563; font-weight: 600; margin: 0 0 2rem; }
+.legal h2 { color: var(--navy); font-size: 1.35rem; font-weight: 700; margin: 2.25rem 0 0.75rem; padding-top: 0.5rem; border-top: 2px solid var(--gradient-end); }
+.legal h3 { color: var(--navy); font-size: 1.1rem; font-weight: 700; margin: 1.5rem 0 0.5rem; }
+.legal p, .legal li { margin: 0 0 0.9rem; }
+.legal ul { padding-left: 1.4rem; }
+.legal li { margin-bottom: 0.5rem; }
+.legal strong { font-weight: 700; }
+.legal a { color: var(--teal); font-weight: 600; }
+.legal .box { background: #f3f7fb; border-left: 4px solid var(--teal); padding: 1rem 1.25rem; margin: 1.25rem 0; border-radius: 4px; }
+.legal table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.98rem; }
+.legal th, .legal td { text-align: left; vertical-align: top; padding: 0.6rem 0.75rem; border-bottom: 1px solid #d1d5db; }
+.legal th { background: #eef2f7; color: var(--navy); font-weight: 700; }
+.legal address { font-style: normal; }
+.legal-footer { background: var(--navy); color: #cbd5e1; text-align: center; padding: 2rem 1.25rem; font-size: 0.95rem; }
+.legal-footer a { color: #fff; font-weight: 600; margin: 0 0.6rem; }
+@media (max-width: 600px) { .legal h1 { font-size: 1.7rem; } .legal { font-size: 1rem; padding: 1.75rem 1rem 3rem; } }
+@media print { .legal-nav, .legal-footer { display: none; } .legal { max-width: none; font-size: 11pt; } }
