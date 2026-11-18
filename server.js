@@ -4,7 +4,31 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.set('trust proxy', true);
+app.set('trust proxy', 1); // one hop: Railway's edge
+app.disable('x-powered-by');
+
+// One canonical host: www.via.one -> via.one.
+app.use((req, res, next) => {
+  if (req.hostname && req.hostname.startsWith('www.')) {
+    return res.redirect(301, `https://${req.hostname.slice(4)}${req.originalUrl}`);
+  }
+  next();
+});
+
+// Basic security headers.
+app.use((req, res, next) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  });
+  next();
+});
+
+// /index.html and /404.html are not separate pages.
+app.get('/index.html', (req, res) => res.redirect(301, '/'));
+app.get('/404.html', (req, res) => res.status(404).sendFile(path.join(__dirname, 'public', '404.html')));
 
 // Contact form: emails each message to support@via.one (SMTP_* env, same mailbox the platform sends from).
 const nodemailer = require('nodemailer');
@@ -18,6 +42,10 @@ const mailer = process.env.SMTP_USER && process.env.SMTP_PASS
     })
   : null;
 const recent = new Map(); // ip -> timestamps, max 5 messages per hour
+setInterval(() => {
+  const cutoff = Date.now() - 3600e3;
+  for (const [ip, ts] of recent) if (!ts.some((t) => t > cutoff)) recent.delete(ip);
+}, 600e3).unref();
 const clean = (v, n) => String(v || '').replace(/[\r\n]+/g, ' ').trim().slice(0, n);
 
 app.post('/api/contact', express.json({ limit: '20kb' }), async (req, res) => {
@@ -60,12 +88,19 @@ for (const [route, file] of Object.entries(legal)) {
   app.get(route, (req, res) => res.sendFile(path.join(__dirname, 'public', file)));
 }
 
-// Browsers ask for /favicon.ico regardless of the <link rel="icon">.
-app.get('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, 'public', 'favicon.png')));
+
 
 // Unknown URLs get a real 404 (they used to return the homepage with a 200).
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+});
+
+// Never show stack traces (e.g. malformed JSON posted to /api/contact).
+app.use((err, req, res, next) => {
+  console.error('request error:', err.message);
+  const status = err.status || err.statusCode || 500;
+  if (req.path.startsWith('/api/')) return res.status(status).json({ ok: false, error: status < 500 ? 'invalid request' : 'server error' });
+  res.status(status).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
 app.listen(PORT, () => {
