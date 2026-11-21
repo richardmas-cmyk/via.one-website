@@ -78,6 +78,9 @@ app.post('/api/contact', express.json({ limit: '20kb' }), async (req, res) => {
   }
 });
 
+// Private reference library (pages on a volume, not in this repo). See library.js.
+require('./library')(app);
+
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -99,7 +102,7 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   console.error('request error:', err.message);
   const status = err.status || err.statusCode || 500;
-  if (req.path.startsWith('/api/')) return res.status(status).json({ ok: false, error: status < 500 ? 'invalid request' : 'server error' });
+  if (req.path.startsWith('/api/') || req.path.startsWith('/library/api/')) return res.status(status).json({ ok: false, error: status < 500 ? 'invalid request' : 'server error' });
   res.status(status).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
