@@ -106,6 +106,17 @@ app.use((err, req, res, next) => {
   res.status(status).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Via.One website running on port ${PORT}`);
 });
+
+// Railway stops the old container with SIGTERM on every deploy. Finish the open
+// requests and exit 0, so a normal stop is not reported as a crash.
+function shutdown(signal) {
+  console.log(`${signal} received, closing`);
+  server.close(() => process.exit(0));
+  if (server.closeIdleConnections) server.closeIdleConnections();
+  setTimeout(() => process.exit(0), 3000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
