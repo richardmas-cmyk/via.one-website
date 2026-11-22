@@ -18,7 +18,7 @@
 //
 // Env: LEDGER_AGENT_TOKEN (append-only), LEDGER_DIR (default: beside LIBRARY_DIR).
 // There is no edit or delete route. Owner actions (mark live, roll back, amend,
-// redact) are phase 2.
+// redact), the backfill inbox, partner links, audit and compare live in owner.js.
 
 const express = require('express');
 const crypto = require('crypto');
@@ -76,6 +76,7 @@ module.exports = function mountLedger(app, lib) {
 
   // ---------- search documents (owner only, never outside links) ----------
   let cache = { key: '', value: null };
+  const resetSearch = () => { cache.key = ''; };
   function searchDocs() {
     let mtime = 0;
     try { mtime = fs.statSync(path.join(lib.DIR, 'index.json')).mtimeMs; } catch (e) { /* no library yet */ }
@@ -195,8 +196,6 @@ module.exports = function mountLedger(app, lib) {
     res.json({ ok: true, products: ledger.products().length });
   }));
   api.get('/verify', wrap((req, res) => res.json({ ok: true, chain: ledger.verify() })));
-  app.use('/library/api/ledger', api, (req, res) => res.status(404).json({ ok: false, error: 'not found' }));
-
   // ---------- owner pages ----------
   const pages = express.Router();
   pages.use((req, res, next) => {
@@ -207,20 +206,26 @@ module.exports = function mountLedger(app, lib) {
     res.redirect(302, `/library/login?next=${encodeURIComponent(`/library/ledger${req.path === '/' ? '' : req.path}`)}`);
     return undefined;
   });
-  pages.get('/', (req, res) => send(res, V.homePage(ctx())));
-  pages.get('/products', (req, res) => send(res, V.productsPage(ctx())));
+  // Phase 2 (owner.js): owner actions, inbox, shares, audit, compare, synonyms, Needs
+  // you, nightly sealed copy. Registered AFTER the sign-in check above; the outside
+  // share view is mounted on app at /library/ledger/s, ahead of this router.
+  const owner = require('./owner')({ app, pages, api, ledger, lib, V, ctx, send, steps, resetSearch });
+  app.use('/library/api/ledger', api, (req, res) => res.status(404).json({ ok: false, error: 'not found' }));
+  const page = (req, res, p, status) => owner.page(req, res, p, status);
+  pages.get('/', (req, res) => page(req, res, V.homePage({ ...ctx(), needsHtml: owner.needsPanel() })));
+  pages.get('/products', (req, res) => page(req, res, V.productsPage(ctx())));
   pages.get('/search.json', (req, res) => res.json(searchDocs()));
   pages.get('/verify', (req, res) => res.json({ ok: true, chain: ledger.verify() }));
   pages.get('/p/:slug', (req, res) => {
     const c = ctx();
     const product = c.products.find((p) => p.slug === req.params.slug);
-    if (!product) return send(res, V.notFound('No such product line.'), 404);
-    return send(res, V.productPage({ ...c, product }));
+    if (!product) return page(req, res, V.notFound('No such product line.'), 404);
+    return page(req, res, V.productPage({ ...c, product }));
   });
   pages.get('/f/:slug', (req, res) => {
     const c = ctx();
     const feature = c.features.get(req.params.slug);
-    if (!feature) return send(res, V.notFound('No such feature.'), 404);
+    if (!feature) return page(req, res, V.notFound('No such feature.'), 404);
     const product = c.products.find((p) => p.slug === feature.product_line) || { slug: feature.product_line, name_en: feature.product_line };
     const libItem = c.libItems.find((i) => i.slug === feature.flow_artifact_slug);
     const st = V.featureState(feature, [...c.crs.values()], libItem);
@@ -229,15 +234,16 @@ module.exports = function mountLedger(app, lib) {
     const shown = asked && versions.includes(asked) ? asked : st.live ? st.live.v : st.next ? st.next.v : versions[versions.length - 1];
     let stepsText = [];
     if (shown) { try { stepsText = steps(fs.readFileSync(lib.filePath(libItem.slug, shown), 'utf8')); } catch (e) { /* missing */ } }
-    return send(res, V.featurePage({ ...c, feature, product, libItem, showV: shown, stepsText }));
+    const extra = `<div class="row noprint"><a class="btn" href="/library/ledger/f/${V.esc(feature.slug)}/share">⇗ Share with a partner</a></div>`;
+    return page(req, res, V.featurePage({ ...c, feature, product, libItem, showV: shown, stepsText, extra }));
   });
   pages.get('/cr/:id', (req, res) => {
     const c = ctx();
     const cr = c.crs.get(req.params.id.toUpperCase());
-    if (!cr) return send(res, V.notFound(`No record ${req.params.id}.`), 404);
-    return send(res, V.crPage({ ...c, cr, product: c.products.find((p) => p.slug === cr.product_line) }));
+    if (!cr) return page(req, res, V.notFound(`No record ${req.params.id}.`), 404);
+    return page(req, res, V.crPage({ ...c, cr, product: c.products.find((p) => p.slug === cr.product_line), extra: owner.ownerPanel(req, cr) }));
   });
-  pages.use((req, res) => send(res, V.notFound('That page does not exist.'), 404));
+  pages.use((req, res) => page(req, res, V.notFound('That page does not exist.'), 404));
   app.use('/library/ledger', pages);
 
   return ledger;

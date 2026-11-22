@@ -208,7 +208,14 @@ function sendDoc(res, item, ver, { signedIn, embed }) {
     'Content-Security-Policy': 'sandbox allow-scripts allow-popups allow-forms',
     'Content-Type': 'text/html; charset=utf-8',
   });
-  res.send(renderDoc(html, { title: `${item.title} v${ver.v} · Via One`, bar }));
+  // Embedded in the ledger's compare view: report scroll position to the parent and
+  // follow its scroll, so two versions side by side move together.
+  const sync = embed ? `<script>(function(){var lock=0;function r(){var h=document.documentElement;return (h.scrollHeight-h.clientHeight)||1}
+addEventListener('scroll',function(){if(lock){lock=0;return}parent.postMessage({bl:'scroll',y:scrollY/r()},'*')},{passive:true});
+addEventListener('message',function(e){if(e.source===parent&&e.data&&e.data.bl==='scrollTo'){lock=1;scrollTo(0,e.data.y*r())}});})();</script>` : '';
+  let doc = renderDoc(html, { title: `${item.title} v${ver.v} · Via One`, bar });
+  if (sync) doc = /<\/body>/i.test(doc) ? doc.replace(/<\/body>(?![\s\S]*<\/body>)/i, `${sync}</body>`) : doc + sync;
+  res.send(doc);
   return true;
 }
 
@@ -347,3 +354,5 @@ module.exports.filePath = filePath;
 module.exports.sessionEmail = sessionEmail;
 module.exports.sameText = sameText;
 module.exports.configured = () => Boolean(SECRET);
+module.exports.sendDoc = sendDoc;
+module.exports.sign = (text) => hmac(`ledger:${text}`);

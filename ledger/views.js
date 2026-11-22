@@ -39,6 +39,8 @@ const badgeFor = (status) => {
   const s = STATUS[status] || ['?', status, ''];
   return `<span class="st ${s[2]}"><span aria-hidden="true">${s[0]}</span> ${esc(s[1])}</span>`;
 };
+const showVal = (v) => (Array.isArray(v) ? v.join(' · ') : v == null || v === '' ? '(empty)' : String(v));
+const actorWord = (a) => (a && a.kind === 'owner' ? 'you' : a && a.kind === 'system' ? 'system' : 'Claude');
 const KIND = {
   build: 'BUILD', modify: 'MODIFY', remove: 'REMOVE', config_flag: 'CONFIG FLAG', incident_fix: 'INCIDENT FIX', doc: 'DOC', revert: 'REVERT',
 };
@@ -114,33 +116,46 @@ code,.mono{font-family:ui-monospace,Menlo,monospace;font-size:.9em}
 #help{position:fixed;inset:10% 10% auto;max-width:34rem;margin:auto;z-index:10;box-shadow:0 0 0 100vmax rgba(0,0,0,.55)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .timeline li{border-left:6px solid var(--line);padding-left:12px}
+.diff li{list-style:none;padding:6px 10px;border-radius:6px;margin:4px 0}.diff .add{border-left:6px solid var(--add)}.diff .del{border-left:6px solid var(--rem);text-decoration:line-through;text-decoration-thickness:2px}
+.diff .same{color:var(--dim)}
+.pair{display:grid;gap:12px;grid-template-columns:1fr 1fr}@media (max-width:800px){.pair{grid-template-columns:1fr}}
+.overlay{position:relative;height:70vh;border:3px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.overlay iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+input[type=range]{width:100%;min-height:44px}
+textarea,input[type=text],input[type=date]{font:400 1rem/1.4 "Atkinson Hyperlegible",system-ui,sans-serif;width:100%;padding:10px 12px;border:2px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+form.stack{display:flex;flex-direction:column;gap:12px}form.stack label{font-weight:700;display:flex;flex-direction:column;gap:4px}
+table.mx{border-collapse:collapse;width:100%}table.mx th,table.mx td{overflow-wrap:normal;word-break:normal;hyphens:none}table.mx th,table.mx td{border:2px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.needs li{border-left:8px solid var(--off)}.needs li.bad{border-left-color:var(--rb)}
+@media print{header.top,.tools,.noprint,nav.main,.skip,#help{display:none!important}body{background:#fff;color:#000}.card,.item{break-inside:avoid;border-color:#000}a{color:#000;text-decoration:none}main.in{max-width:none}}
 .tag{font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.85rem;color:var(--dim)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 `;
 
-function shell({ title, body, nonce, active, chain, lang = 'en' }) {
-  const nav = [['home', '/library/ledger', 'Home'], ['products', '/library/ledger/products', 'Products'], ['library', '/library', 'Library']]
+function shell({ title, body, nonce, active, chain, lang = 'en', inboxCount = 0, partner = false, flash = null }) {
+  const nav = partner ? '' : [['home', '/library/ledger', 'Home'], ['products', '/library/ledger/products', 'Products'], ['audit', '/library/ledger/audit', 'Audit'],
+    ['inbox', '/library/ledger/inbox', `Inbox${inboxCount ? ` (${inboxCount})` : ''}`], ['shares', '/library/ledger/shares', 'Shares'], ['library', '/library', 'Library']]
     .map(([k, href, label]) => `<a href="${href}"${active === k ? ' aria-current="page"' : ''}>${label}</a>`).join('');
   const banner = chain ? (chain.ok
     ? `<p class="banner" role="status"><span aria-hidden="true">✓</span> Chain verified: ${chain.count} ${chain.count === 1 ? 'entry' : 'entries'}, head <span class="mono">${esc(chain.head.slice(7, 15))}</span></p>`
-    : `<p class="banner bad" role="alert"><span aria-hidden="true">✕</span> CHAIN BROKEN at entry ${chain.brokenAt}. The ledger is read-only until this is reviewed.</p>`) : '';
+    : `<p class="banner bad" role="alert"><span aria-hidden="true">✕</span> CHAIN BROKEN at entry ${chain.brokenAt}${chain.anchorProblem ? ` (${esc(chain.anchorProblem)})` : ''}. The ledger is read-only until this is reviewed.</p>`) : '';
+  const flashHtml = flash ? `<p class="banner${flash.bad ? ' bad' : ''}" role="${flash.bad ? 'alert' : 'status'}"><span aria-hidden="true">${flash.bad ? '✕' : '✓'}</span> ${esc(flash.text)}</p>` : '';
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow"><title>${esc(title)}</title><link rel="icon" href="/favicon.png">
 <script nonce="${nonce}">(function(){try{var s=localStorage.getItem('bl.scale');if(s)document.documentElement.style.setProperty('--scale',s);var t=localStorage.getItem('bl.theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}})();</script>
 <style>${CSS}</style></head><body>
 <a class="skip" href="#main">Skip to content</a>
-<header class="top"><div class="in"><a class="brand" href="/library/ledger">BUILD LEDGER</a>
-<nav class="main" aria-label="Main">${nav}</nav>
+<header class="top"><div class="in">${partner ? '<span class="brand">VIA ONE</span>' : '<a class="brand" href="/library/ledger">BUILD LEDGER</a>'}
+${nav ? `<nav class="main" aria-label="Main">${nav}</nav>` : ''}
 <div class="tools" role="group" aria-label="Reading tools">
 <button type="button" data-act="smaller" aria-label="Smaller text">A−</button><button type="button" data-act="bigger" aria-label="Bigger text">A+</button>
 <button type="button" data-act="theme" aria-label="Switch light or dark">◐ Theme</button>
 <button type="button" data-act="read" aria-label="Read this page aloud">▶ Read</button>
 <button type="button" data-act="voice" aria-label="Reading voice language">EN</button>
 <button type="button" data-act="help" aria-label="Keyboard shortcuts">?</button></div></div></header>
-<main id="main" class="in" tabindex="-1">${banner}${body}</main>
+<main id="main" class="in" tabindex="-1">${flashHtml}${banner}${body}</main>
 <div id="help" class="card" role="dialog" aria-modal="true" aria-labelledby="help-h" hidden><h2 id="help-h">Keyboard shortcuts</h2>
 <dl class="kv"><dt>/</dt><dd>Search</dd><dt>j / k</dt><dd>Next / previous item</dd><dt>Enter</dt><dd>Open the selected item</dd>
-<dt>[ / ]</dt><dd>Previous / next flow version</dd><dt>r</dt><dd>Read aloud (again stops)</dd><dt>+ / −</dt><dd>Bigger / smaller text</dd><dt>g h</dt><dd>Home</dd><dt>?</dt><dd>This list</dd><dt>Esc</dt><dd>Close / stop</dd></dl>
+<dt>[ / ]</dt><dd>Previous / next flow version</dd><dt>c</dt><dd>Compare versions (feature page)</dd><dt>a e m d</dt><dd>Inbox: accept, edit, merge, discard</dd><dt>r</dt><dd>Read aloud (again stops)</dd><dt>+ / −</dt><dd>Bigger / smaller text</dd><dt>g h</dt><dd>Home</dd><dt>?</dt><dd>This list</dd><dt>Esc</dt><dd>Close / stop</dd></dl>
 <div><button type="button" class="primary" data-act="help-close">Close</button></div></div>
 <script nonce="${nonce}">${CLIENT_JS}</script></body></html>`;
 }
@@ -195,7 +210,7 @@ function featureLine(f, st) {
 }
 
 // ---------- pages ----------
-function homePage({ products, crs, features, chain }) {
+function homePage({ products, crs, features, chain, needsHtml = '' }) {
   const list = [...crs.values()].sort((a, b) => String(b.date).localeCompare(String(a.date)));
   const weekAgo = Date.now() - 7 * 864e5;
   const week = list.filter((cr) => Date.parse(cr.date) >= weekAgo);
@@ -212,7 +227,7 @@ ${live ? `<span class="st st-live"><span aria-hidden="true">●</span> ${live} L
     title: 'Build Ledger · Via One',
     body: `<h1>Build Ledger</h1>
 <p data-read>Every build, change and removal, by product. Type a product or feature in English or Spanish, a CR number, a commit or a flag name.</p>
-<form role="search" onsubmit="return false"><label class="big" for="q">Search</label>
+<form role="search" id="search-form"><label class="big" for="q">Search</label>
 <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="gift card, cheque, SPEI, CR-0003…" aria-describedby="also"></form>
 <p id="also" class="dim" aria-live="polite"></p>
 <div class="row" role="group" aria-label="Filters">
@@ -221,7 +236,7 @@ ${live ? `<span class="st st-live"><span aria-hidden="true">●</span> ${live} L
 <label>Status <select id="f-status">${opt('', 'All')}${Object.entries(STATUS).map(([k, s]) => opt(k, `${s[0]} ${s[1]}`)).join('')}</select></label></div>
 <p id="count" class="sr" aria-live="polite"></p>
 <div id="results" hidden></div>
-<div id="dash">
+<div id="dash">${needsHtml}
 <section aria-labelledby="h-week"><h2 id="h-week">This week (${week.length})</h2>
 ${week.length ? `<ol class="list">${week.map((cr) => crItem(cr, products, features)).join('')}</ol>` : '<p class="dim">No changes recorded in the last 7 days.</p>'}</section>
 <section aria-labelledby="h-prod" style="margin-top:24px"><h2 id="h-prod">Product lines</h2><ul class="grid list" style="margin-top:12px">${tiles}</ul></section>
@@ -263,7 +278,7 @@ ${retired.length ? `<details><summary>Retired features (${retired.length})</summ
   };
 }
 
-function featurePage({ feature, product, crs, features, libItem, products, chain, showV, stepsText }) {
+function featurePage({ feature, product, crs, features, libItem, products, chain, showV, stepsText, extra = '' }) {
   const st = featureState(feature, [...crs.values()], libItem);
   const versions = libItem ? libItem.versions.map((v) => v.v) : [];
   const shown = showV && versions.includes(showV) ? showV : st.live ? st.live.v : st.next ? st.next.v : versions[versions.length - 1];
@@ -292,6 +307,7 @@ ${versions.length ? `<section aria-labelledby="h-flow"><h2 id="h-flow">Flow page
       return `<a class="btn${v === shown ? ' primary' : ''}" ${v === shown ? 'aria-current="true"' : ''} data-ver="${v}" href="?v=${v}">v${v}${cr ? ` · ${esc(statusWords(cr))}` : ''}</a>`;
     }).join('')}
 <a class="btn" href="/library/${esc(feature.flow_artifact_slug)}/v${shown}" target="_blank" rel="noopener">Open full page ↗</a>
+${versions.length > 1 ? `<a class="btn" id="compare-link" href="/library/ledger/f/${esc(feature.slug)}/compare?a=${shown > versions[0] ? shown - 1 : shown}&b=${shown > versions[0] ? shown : versions[1]}">Compare ⇄</a>` : ''}
 <button type="button" data-act="zoom-out" aria-label="Zoom flow out">−</button><button type="button" data-act="zoom-in" aria-label="Zoom flow in">+</button></div>
 <div class="frame" style="margin-top:12px"><iframe id="flow" title="${esc(feature.name_en)} flow page version ${shown}" src="/library/${esc(feature.flow_artifact_slug)}/v${shown}?embed=1" sandbox="allow-scripts allow-popups"></iframe></div>
 ${stepsText && stepsText.length ? `<details style="margin-top:10px"><summary>Steps as text (version ${shown})</summary><ol data-read>${stepsText.map((s) => `<li>${esc(s)}</li>`).join('')}</ol></details>` : ''}
@@ -300,6 +316,7 @@ ${stepsText && stepsText.length ? `<details style="margin-top:10px"><summary>Ste
 <section class="card" aria-labelledby="h-l"><h2 id="h-l"><span aria-hidden="true">●</span> What's live (${groups.live.length})</h2>${mini(groups.live)}</section>
 <section class="card" aria-labelledby="h-o"><h2 id="h-o"><span aria-hidden="true">◐</span> Not fully live yet (${groups.off.length})</h2>${mini(groups.off)}</section>
 <section class="card" aria-labelledby="h-g"><h2 id="h-g"><span aria-hidden="true">✕</span> Removed or rolled back (${groups.gone.length})</h2>${mini(groups.gone)}</section></div>
+${extra}
 ${tally(st.mine, libItem ? versions.length : null)}
 <section aria-labelledby="h-t"><h2 id="h-t">Timeline (newest first)</h2>
 <ol class="list timeline" style="margin-top:12px">${st.mine.map((cr) => {
@@ -311,7 +328,7 @@ ${tally(st.mine, libItem ? versions.length : null)}
   };
 }
 
-function crPage({ cr, product, features, chain, libItems }) {
+function crPage({ cr, product, features, chain, libItems, extra = '' }) {
   const feats = (cr.features || []).map((f) => features.get(f)).filter(Boolean);
   const ev = cr.evidence || {};
   const repos = ev.repos || [];
@@ -319,7 +336,6 @@ function crPage({ cr, product, features, chain, libItems }) {
   const files = repos.reduce((n, r) => n + ((r.diffstat && r.diffstat.files) || (r.files_touched || []).length || 0), 0);
   const ins = repos.reduce((n, r) => n + ((r.diffstat && r.diffstat.insertions) || 0), 0);
   const del = repos.reduce((n, r) => n + ((r.diffstat && r.diffstat.deletions) || 0), 0);
-  const actorWord = (a) => (a && a.kind === 'owner' ? 'you' : a && a.kind === 'system' ? 'system' : 'Claude');
   const tests = ev.tests;
   return {
     title: `${cr.cr_id} ${cr.title} · Build Ledger`,
@@ -332,16 +348,15 @@ ${cr.why ? `<p data-read><b>Why:</b> ${esc(cr.why)}</p>` : ''}</section>
 ${(cr.what_changed || []).length || (cr.removed || []).length ? `<section class="card" aria-labelledby="h-wc"><h2 id="h-wc">What changed</h2><ul class="list" data-read>
 ${(cr.what_changed || []).map((w) => `<li><span class="plus">+ ADDED</span> ${esc(w)}</li>`).join('')}
 ${(cr.removed || []).map((w) => `<li><span class="minus">− REMOVED</span> ${esc(w)}</li>`).join('')}</ul></section>` : ''}
-<dl class="kv card">
-${cr.rollback_plan ? `<dt>Rollback</dt><dd data-read>${esc(cr.rollback_plan)}</dd>` : ''}
+${(() => { const kv = `${cr.rollback_plan ? `<dt>Rollback</dt><dd data-read>${esc(cr.rollback_plan)}</dd>` : ''}
 ${(cr.open_items || []).length ? `<dt>Open items</dt><dd><ul>${cr.open_items.map((o) => `<li>${esc(o)}</li>`).join('')}</ul></dd>` : ''}
 ${cr.reverts ? `<dt>Reverts</dt><dd><a href="/library/ledger/cr/${esc(cr.reverts)}">${esc(cr.reverts)}</a></dd>` : ''}
 ${(cr.related || []).length ? `<dt>Related</dt><dd>${cr.related.map((r) => `<a href="/library/ledger/cr/${esc(r)}">${esc(r)}</a>`).join(' · ')}</dd>` : ''}
 ${(cr.evidence && cr.evidence.flags || []).length ? `<dt>Flags</dt><dd>${cr.evidence.flags.map((f) => `<span class="mono">${esc(f.name)}</span>${f.env === 'code' ? ' <span class="dim">(setting read by the new code)</span>' : `${f.to != null ? ` → ${esc(f.to)}` : ''}${f.env ? ` (${esc(f.env)})` : ''}`}`).join('<br>')}</dd>` : ''}
-${cr.override_reason ? `<dt>Path-map override</dt><dd>${esc(cr.override_reason)}</dd>` : ''}
-</dl>
-<section class="card" aria-labelledby="h-sh"><h2 id="h-sh">Status history</h2><ol class="list">${cr.history.map((h) => `<li>${badgeFor(h.to)} ${fmtDate(h.at, true)} · by ${actorWord(h.actor)}${h.note && h.note !== 'recorded' ? ` · ${esc(h.note)}` : ''}${h.evidence && h.evidence.deploy_id ? ` · deploy <span class="mono">${esc(h.evidence.deploy_id)}</span>` : ''}</li>`).join('')}</ol>
+${cr.override_reason ? `<dt>Path-map override</dt><dd>${esc(cr.override_reason)}</dd>` : ''}`; return kv.trim() ? `<dl class="kv card">${kv}</dl>` : ''; })()}
+<section class="card" aria-labelledby="h-sh"><h2 id="h-sh">Status history</h2><ol class="list">${cr.history.map((h) => `<li>${badgeFor(h.to)}${h.from === 'live' && h.to === 'live' ? ' <b>confirmed</b>' : ''} ${fmtDate(h.at, true)} · by ${actorWord(h.actor)}${h.note && h.note !== 'recorded' ? ` · ${esc(h.note)}` : ''}${h.evidence && h.evidence.deploy_id ? ` · deploy <span class="mono">${esc(h.evidence.deploy_id)}</span>` : ''}</li>`).join('')}</ol>
 ${cr.current === 'live' && cr.live_proof === 'inferred' ? '<p class="dim">◍ “Live (inferred)” means the record says live but there is no deploy proof attached and you have not confirmed it.</p>' : ''}</section>
+${extra}
 ${(cr.artifacts || []).length ? `<section class="card" aria-labelledby="h-pg"><h2 id="h-pg">Pages</h2><ul>${cr.artifacts.map((a) => {
       const li = libItems.find((i) => i.slug === a.library_slug);
       return `<li><a href="/library/${esc(a.library_slug)}/v${a.version}">${esc(li ? li.title : a.library_slug)} v${a.version}</a> <span class="dim">(${esc(a.role)})</span></li>`;
@@ -353,7 +368,9 @@ ${(ev.migrations || []).length ? `<h3>Migrations</h3><ul class="mono">${ev.migra
 ${(ev.deploys || []).length ? `<h3>Deploys</h3><ul class="mono">${ev.deploys.map((d) => `<li>${esc(d.env || '')} ${esc(d.deploy_id || '')} ${esc(d.at || '')}</li>`).join('')}</ul>` : ''}
 ${tests ? `<p>Tests: <span class="mono">${esc(tests.command || '')}</span></p>` : ''}
 ${ev.no_code ? '<p>No code in this change.</p>' : ''}</details>
-${cr.amendments.length ? `<section class="card"><h2>Amendments</h2><ul>${cr.amendments.map((a) => `<li>AMENDED ${fmtDate(a.at)}: ${esc(Object.keys(a.patch).join(', '))} — ${esc(a.reason)}</li>`).join('')}</ul></section>` : ''}
+${cr.amendments.length ? `<section class="card" aria-labelledby="h-am"><h2 id="h-am">Amendments (${cr.amendments.length})</h2><ol class="list">${cr.amendments.map((a) => `<li class="item"><p><b>AMENDED</b> ${fmtDate(a.at, true)} by ${actorWord(a.actor)} — ${esc(a.reason)}</p>
+<dl class="kv">${Object.keys(a.patch).map((k) => `<dt>${esc(k)}</dt><dd><span class="minus">was:</span> ${esc(showVal(a.original[k]))}<br><span class="plus">now:</span> ${esc(showVal(a.patch[k]))}</dd>`).join('')}</dl></li>`).join('')}</ol></section>` : ''}
+${(cr.redactions || []).length ? `<section class="card" aria-labelledby="h-rd"><h2 id="h-rd">Redactions</h2><ul>${cr.redactions.map((r) => `<li><b>REDACTED</b> ${fmtDate(r.at, true)} by ${actorWord(r.actor)}: ${esc(r.fields.join(', '))} — ${esc(r.reason)}</li>`).join('')}</ul></section>` : ''}
 <p class="dim">Integrity: entry ${cr.seq} · hash <span class="mono">${esc(cr.hash.slice(7, 19))}</span> · ${chain.ok ? '✓ chain verified' : '✕ chain broken'} · ${cr.amendments.length ? 'amended' : 'not amended'} · session <span class="mono">${esc(cr.session.session_id.slice(0, 13))}</span></p>`,
     active: 'products', chain,
   };
@@ -363,4 +380,5 @@ function notFound(what) {
   return { title: 'Not found · Build Ledger', body: `<h1>❌ Not found</h1><p>${esc(what)}</p><p><a href="/library/ledger">Back to the ledger</a></p>` };
 }
 
-module.exports = { shell, homePage, productsPage, productPage, featurePage, crPage, notFound, featureState, statusWords, statusKey, esc, KIND, STATUS };
+module.exports = { shell, homePage, productsPage, productPage, featurePage, crPage, notFound, featureState, statusWords, statusKey, esc, KIND, STATUS,
+  badge, badgeFor, kindChip, fmtDate, crItem, tally, actorWord, showVal };

@@ -36,6 +36,10 @@ const FEATURE_TYPES = ['consumer-flow', 'partner-api', 'internal-tool', 'job', '
 const SLUG = /^[a-z0-9][a-z0-9-]{1,60}$/;
 const ROLES = ['flow', 'sheet', 'diagram', 'evidence'];
 
+const AMENDABLE = ['product_line', 'features', 'kind', 'title', 'summary_plain', 'why', 'what_changed', 'removed', 'open_items', 'rollback_plan', 'risk', 'user_impact', 'tags', 'search_terms_es'];
+const REDACTABLE = ['title', 'summary_plain', 'why', 'what_changed', 'removed', 'open_items', 'rollback_plan', 'status_notes'];
+const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o[k] !== undefined).map((k) => [k, o[k]]));
+
 class LedgerError extends Error { constructor(msg, status = 400) { super(msg); this.status = status; } }
 
 class Ledger {
@@ -61,16 +65,61 @@ class Ledger {
   verify() {
     let prev = GENESIS;
     let brokenAt = null;
+    // A redacted entry no longer matches its payload_hash. It is accepted only when a
+    // later "redact" entry names it and carries the hash of the redacted payload.
+    const vouched = new Map();
+    for (const e of this.entries) {
+      if (e && e.type === 'redact' && e.payload) for (const t of e.payload.targets || []) vouched.set(t.seq, t.redacted_payload_hash);
+    }
     for (let i = 0; i < this.entries.length; i++) {
       const e = this.entries[i];
-      const redacted = e.payload && e.payload.redacted === true;
-      if (e.corrupt || e.seq !== i + 1 || e.prev_hash !== prev
-        || (!redacted && sha(canonical(e.payload)) !== e.payload_hash)
-        || envelopeHash(e) !== e.hash) { brokenAt = i + 1; break; }
+      const ph = e.corrupt ? null : sha(canonical(e.payload));
+      const payloadOk = ph === e.payload_hash || (e.payload && e.payload.redacted && vouched.get(e.seq) === ph);
+      if (e.corrupt || e.seq !== i + 1 || e.prev_hash !== prev || !payloadOk || envelopeHash(e) !== e.hash) { brokenAt = i + 1; break; }
       prev = e.hash;
     }
-    this.chain = { ok: brokenAt === null, count: this.entries.length, head: prev, brokenAt, checkedAt: new Date().toISOString() };
+    const anchor = brokenAt === null ? this.checkAnchors() : null;
+    this.chain = {
+      ok: brokenAt === null && !anchor, count: this.entries.length, head: prev, brokenAt: brokenAt || (anchor && anchor.seq) || null,
+      anchorProblem: anchor ? anchor.problem : null, checkedAt: new Date().toISOString(),
+    };
     return this.chain;
+  }
+
+  // ---------- sealed daily copies ("anchors") ----------
+  // anchors.jsonl holds { date, count, head, file_sha256 } per day; anchors/<date>.jsonl
+  // is the copy. A later rewrite of history shows up as a head that no longer matches.
+  anchors() {
+    const f = path.join(this.dir, 'anchors.jsonl');
+    if (!fs.existsSync(f)) return [];
+    return fs.readFileSync(f, 'utf8').split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch (e) { return null; } }).filter(Boolean);
+  }
+  checkAnchors() {
+    for (const a of this.anchors()) {
+      if (!a.count) continue;
+      if (a.count > this.entries.length) return { seq: this.entries.length, problem: `entries are missing: the ${a.date} copy had ${a.count}, now ${this.entries.length}` };
+      const e = this.entries[a.count - 1];
+      if (!e || e.hash !== a.head) return { seq: a.count, problem: `entry ${a.count} no longer matches the sealed copy of ${a.date}` };
+    }
+    return null;
+  }
+  anchor(date, { keepDays = 60 } = {}) {
+    const list = this.anchors();
+    if (list.some((a) => a.date === date)) return null;
+    const dir = path.join(this.dir, 'anchors');
+    fs.mkdirSync(dir, { recursive: true });
+    const text = fs.existsSync(this.file) ? fs.readFileSync(this.file) : Buffer.alloc(0);
+    const copy = path.join(dir, `${date}.jsonl`);
+    fs.writeFileSync(copy, text, { flag: 'wx' });
+    const last = this.entries[this.entries.length - 1];
+    const a = { date, count: this.entries.length, head: last ? last.hash : GENESIS, file_sha256: sha(text), at: new Date().toISOString() };
+    fs.appendFileSync(path.join(this.dir, 'anchors.jsonl'), `${JSON.stringify(a)}\n`);
+    const cutoff = Date.now() - keepDays * 864e5;
+    for (const name of fs.readdirSync(dir)) {
+      const d = Date.parse(name.slice(0, 10));
+      if (!isNaN(d) && d < cutoff) { try { fs.unlinkSync(path.join(dir, name)); } catch (e) { /* ignore */ } }
+    }
+    return a;
   }
 
   readJSON(name, fallback) {
@@ -84,6 +133,14 @@ class Ledger {
   writeRegistry(name, value) {
     const target = path.join(this.dir, name);
     if (fs.existsSync(target)) fs.copyFileSync(target, path.join(this.dir, `${name}.${Date.now()}.bak`));
+    const tmp = `${target}.${process.pid}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(value, null, 2));
+    fs.renameSync(tmp, target);
+  }
+
+  // Workflow files (inbox, shares, nightly report): replaced atomically, not history.
+  writeState(name, value) {
+    const target = path.join(this.dir, name);
     const tmp = `${target}.${process.pid}.tmp`;
     fs.writeFileSync(tmp, JSON.stringify(value, null, 2));
     fs.renameSync(tmp, target);
@@ -107,19 +164,21 @@ class Ledger {
   }
 
   // ---------- derived state (a pure fold over the entries) ----------
-  state() {
-    if (this._state && this._state.count === this.entries.length) return this._state;
+  // upto = only the first N entries (how the ledger read at that moment; used by
+  // pinned partner links).
+  state(upto) {
+    const pinned = upto != null && upto < this.entries.length;
+    if (!pinned && this._state && this._state.count === this.entries.length) return this._state;
     const crs = new Map();
     const features = new Map();
-    for (const e of this.entries) {
+    for (const e of pinned ? this.entries.slice(0, upto) : this.entries) {
       if (e.corrupt || !e.payload) continue;
       const p = e.payload;
       if (e.type === 'change') {
-        if (p.redacted) continue;
         const cr = {
           ...p, seq: e.seq, recorded_at: e.at, actor: e.actor, hash: e.hash,
           history: [{ to: p.status, at: e.at, actor: e.actor, note: 'recorded', evidence: null, seq: e.seq }],
-          amendments: [], links: [], current: p.status,
+          amendments: [], links: [], current: p.status, redactions: [],
         };
         crs.set(p.cr_id, cr);
         if (p.new_feature) {
@@ -144,6 +203,12 @@ class Ledger {
         if (!cr) continue;
         cr.amendments.push({ patch: p.patch, reason: p.reason, at: e.at, actor: e.actor, original: Object.fromEntries(Object.keys(p.patch || {}).map((k) => [k, cr[k]])) });
         Object.assign(cr, p.patch);
+      } else if (e.type === 'redact') {
+        const cr = crs.get(p.cr_id);
+        if (cr) cr.redactions.push({ fields: p.fields, reason: p.reason, at: e.at, actor: e.actor });
+      } else if (e.type === 'retire_feature') {
+        const f = features.get(p.feature);
+        if (f) f.retired = { at: e.at, actor: e.actor, reason: p.reason };
       }
     }
     for (const cr of crs.values()) {
@@ -153,8 +218,9 @@ class Ledger {
       cr.live_proof = cr.current !== 'live' ? null : ownerLive ? 'owner-confirmed' : (deployed || evLive) ? 'deploy' : 'inferred';
       cr.date = cr.occurred_at || cr.recorded_at;
     }
-    this._state = { count: this.entries.length, crs, features };
-    return this._state;
+    const out = { count: pinned ? upto : this.entries.length, crs, features };
+    if (!pinned) this._state = out;
+    return out;
   }
 
   nextId() {
@@ -245,7 +311,9 @@ class Ledger {
     const cr = crs.get(String(body.cr_id || ''));
     if (!cr) throw new LedgerError(`no record ${body.cr_id}`, 404);
     const to = String(body.to || '');
-    if (!(TRANSITIONS[cr.current] || []).includes(to)) throw new LedgerError(`cannot go from ${cr.current} to ${to}`);
+    // The owner may confirm a record that is live without proof (live → live, owner-confirmed).
+    const confirming = to === 'live' && cr.current === 'live' && cr.live_proof !== 'owner-confirmed' && actor.kind === 'owner';
+    if (!confirming && !(TRANSITIONS[cr.current] || []).includes(to)) throw new LedgerError(`cannot go from ${cr.current} to ${to}`);
     const evidence = body.evidence && typeof body.evidence === 'object' ? body.evidence : null;
     if (actor.kind === 'agent') {
       if (!['built_flag_off', 'staged', 'live', 'abandoned'].includes(to)) throw new LedgerError('only the owner can mark a record rolled back or retired', 403);
@@ -274,6 +342,109 @@ class Ledger {
     return this.append('link', p, actor);
   }
 
+  // A correction. The original values stay visible on the record page.
+  addAmend(body, actor) {
+    const { crs } = this.state();
+    const cr = crs.get(String(body.cr_id || ''));
+    if (!cr) throw new LedgerError(`no record ${body.cr_id}`, 404);
+    const reason = String(body.reason || '').trim();
+    if (reason.length < 4) throw new LedgerError('an amendment needs a reason');
+    const patch = body.patch && typeof body.patch === 'object' ? { ...body.patch } : null;
+    if (!patch || !Object.keys(patch).length) throw new LedgerError('nothing to amend');
+    for (const k of Object.keys(patch)) {
+      if (!AMENDABLE.includes(k)) throw new LedgerError(`"${k}" cannot be amended (allowed: ${AMENDABLE.join(', ')})`);
+      if (JSON.stringify(patch[k]) === JSON.stringify(cr[k])) delete patch[k];
+    }
+    if (!Object.keys(patch).length) throw new LedgerError('nothing changed');
+    // Re-validate the record as it would read after the amendment.
+    const merged = { ...pick(cr, ['product_line', 'features', 'kind', 'title', 'summary_plain', 'why', 'what_changed', 'removed', 'open_items', 'rollback_plan', 'risk', 'user_impact', 'tags', 'search_terms_es']), ...patch };
+    this.validateFields(merged);
+    return this.append('amend', { cr_id: cr.cr_id, patch, reason: reason.slice(0, 300) }, actor);
+  }
+
+  // Owner only. Replaces chosen fields of a record (and of its amendments) with a
+  // visible marker, rewrites those lines in place, and appends a "redact" entry that
+  // vouches for each rewritten line, so the chain still verifies.
+  redact(body, actor) {
+    if (actor.kind !== 'owner') throw new LedgerError('only the owner can redact', 403);
+    if (!this.chain.ok) throw new LedgerError('ledger is read-only', 503);
+    const { crs } = this.state();
+    const cr = crs.get(String(body.cr_id || ''));
+    if (!cr) throw new LedgerError(`no record ${body.cr_id}`, 404);
+    if (String(body.confirm || '').trim().toUpperCase() !== `REDACT ${cr.cr_id}`) throw new LedgerError(`type REDACT ${cr.cr_id} to confirm`);
+    const reason = String(body.reason || '').trim();
+    if (reason.length < 4) throw new LedgerError('a redaction needs a reason');
+    const fields = (Array.isArray(body.fields) ? body.fields : [body.fields]).filter((f) => REDACTABLE.includes(f));
+    if (!fields.length) throw new LedgerError(`choose fields to redact (${REDACTABLE.join(', ')})`);
+    const marker = `REDACTED — ${reason}`.slice(0, 78);
+    const blank = (v) => (Array.isArray(v) ? v.map(() => marker) : marker);
+    const targets = [];
+    const rewritten = this.entries.map((e) => {
+      if (!e.payload || e.payload.cr_id !== cr.cr_id) return e;
+      let hit = null;
+      if (e.type === 'change') for (const f of fields) if (e.payload[f] != null) { hit = hit || { ...e.payload }; hit[f] = blank(e.payload[f]); }
+      if (e.type === 'amend' && e.payload.patch) {
+        for (const f of fields) if (e.payload.patch[f] != null) { hit = hit || { ...e.payload, patch: { ...e.payload.patch } }; hit.patch[f] = blank(e.payload.patch[f]); }
+      }
+      if (e.type === 'status' && fields.includes('status_notes') && e.payload.note) { hit = hit || { ...e.payload }; hit.note = marker; }
+      if (!hit) return e;
+      hit.redacted = true;
+      targets.push({ seq: e.seq, redacted_payload_hash: sha(canonical(hit)) });
+      return { ...e, payload: hit };
+    });
+    if (!targets.length) throw new LedgerError('those fields are empty on this record');
+    if (scan({ reason }).length) throw new LedgerError('the reason itself contains sensitive data');
+    const rewrite = (file, entries) => {
+      const tmp = `${file}.${process.pid}.tmp`;
+      fs.writeFileSync(tmp, entries.map((e) => JSON.stringify(e)).join('\n') + (entries.length ? '\n' : ''));
+      fs.renameSync(tmp, file);
+    };
+    // The redact entry goes first in memory so verify() accepts the rewritten lines.
+    const last = this.entries[this.entries.length - 1];
+    const payload = { cr_id: cr.cr_id, fields, reason: reason.slice(0, 300), targets };
+    const e = { seq: this.entries.length + 1, type: 'redact', at: new Date().toISOString(), actor, payload, payload_hash: sha(canonical(payload)), prev_hash: last.hash };
+    e.hash = envelopeHash(e);
+    rewrite(this.file, [...rewritten, e]);
+    // Sealed copies get the same treatment (their heads stay valid: hashes do not change).
+    const adir = path.join(this.dir, 'anchors');
+    if (fs.existsSync(adir)) {
+      for (const name of fs.readdirSync(adir)) {
+        const f = path.join(adir, name);
+        const lines = fs.readFileSync(f, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+        rewrite(f, lines.map((x) => { const r = rewritten[x.seq - 1]; return r && r.hash === x.hash ? r : x; }));
+      }
+    }
+    this.load();
+    return e;
+  }
+
+  // Free-form audit events that are not about one record's content: shares, inbox
+  // decisions, registry edits, feature retirement.
+  addEvent(type, payload, actor) {
+    if (!['share', 'inbox', 'registry', 'retire_feature', 'review'].includes(type)) throw new LedgerError(`unknown event ${type}`);
+    return this.append(type, payload, actor);
+  }
+
+  validateFields(p) {
+    const err = (m) => { throw new LedgerError(m); };
+    const str = (k, max, req = true) => {
+      if (p[k] == null || p[k] === '') { if (req) err(`"${k}" is required`); return; }
+      if (typeof p[k] !== 'string' || p[k].length > max) err(`"${k}" must be text of at most ${max} characters`);
+    };
+    const list = (k, maxItems, maxLen) => {
+      if (p[k] == null) return;
+      if (!Array.isArray(p[k]) || p[k].length > maxItems || p[k].some((x) => typeof x !== 'string' || x.length > maxLen)) err(`"${k}" must be a list of at most ${maxItems} short texts`);
+    };
+    if (!this.products().some((x) => x.slug === p.product_line)) err(`unknown product_line "${p.product_line}"`);
+    if (!KINDS.includes(p.kind)) err(`kind must be one of ${KINDS.join(', ')}`);
+    str('title', 80); str('summary_plain', 400); str('why', 600, false); str('rollback_plan', 400, false);
+    list('what_changed', 12, 160); list('removed', 12, 160); list('open_items', 12, 200); list('tags', 20, 40); list('search_terms_es', 20, 60);
+    if (p.user_impact != null && !['none', 'internal', 'partner', 'consumer'].includes(p.user_impact)) err('user_impact must be none, internal, partner or consumer');
+    if (p.risk != null && !['low', 'medium', 'high'].includes(p.risk)) err('risk must be low, medium or high');
+    const { features } = this.state();
+    if (!Array.isArray(p.features) || !p.features.length || p.features.some((f) => !features.has(f))) err('"features" must list known feature slugs');
+  }
+
   // All commit SHAs any record points to (for the stop-hook check).
   commits() {
     const out = [];
@@ -282,4 +453,4 @@ class Ledger {
   }
 }
 
-module.exports = { Ledger, LedgerError, KINDS, STATUSES, TRANSITIONS, canonical, GENESIS };
+module.exports = { Ledger, LedgerError, KINDS, STATUSES, TRANSITIONS, AMENDABLE, REDACTABLE, canonical, GENESIS, sha };

@@ -9,6 +9,11 @@
 //   ledger status CR-0007 staged|built_flag_off|live|abandoned [--deploy env:ID] [--note "..."]
 //   ledger skip --reason "memory notes only"   (this session's unrecorded work is not product work)
 //   ledger show CR-0007 · ledger verify · ledger registry pull|push <file.json>
+//   ledger amend CR-0007 --patch fix.json --reason "wrong product line"
+//   ledger needs                         what the Needs-you panel shows
+//   ledger backfill commits [--since 2026-11-01] [--until …]   unrecorded main commits as a candidate skeleton
+//   ledger inbox add --draft candidates.json   send backfilled candidates to the owner's Inbox
+//   ledger nightly [--quiet]             launchd: unrecorded main commits + Mac backup + independent chain check
 //   ledger start / ledger check          Claude Code SessionStart / Stop hooks (read hook JSON on stdin)
 //
 // Local state lives in ~/.ledger (sessions, cache, config). Nothing secret is stored there;
@@ -42,7 +47,7 @@ const token = () => {
   return t;
 };
 
-async function call(method, route, body, { timeoutMs = 20000, session } = {}) {
+async function call(method, route, body, { timeoutMs = 20000, session, raw } = {}) {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeoutMs);
   try {
@@ -51,6 +56,7 @@ async function call(method, route, body, { timeoutMs = 20000, session } = {}) {
       headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json', ...(session ? { 'X-Ledger-Session': session } : {}) },
       body: body ? JSON.stringify(body) : undefined,
     });
+    if (raw && res.ok) return await res.text();
     const json = await res.json().catch(() => ({}));
     if (!res.ok || !json.ok) throw new Error(`${method} ${route} → ${res.status} ${json.error || ''}`);
     return json;
@@ -243,7 +249,9 @@ async function cmdHelp() {
 2. ledger record --draft draft.json        (commits, files, flags, migrations and Library pages are filled in for you)
 3. Put "Ledger: CR-NNNN" in the next commit message if there is one.
 
-Other: ledger pending · ledger link CR-NNNN --session-work · ledger status CR-NNNN staged · ledger skip --reason "..."`);
+Other: ledger pending · ledger link CR-NNNN --session-work · ledger status CR-NNNN staged · ledger skip --reason "..."
+       ledger amend CR-NNNN --patch fix.json --reason "..." · ledger needs · ledger inbox list
+Backfill: ledger backfill commits --since 2026-11-01 > c.json → fill in (provenance.source "backfill", confidence, notes) → ledger inbox add --draft c.json`);
   try {
     const r = await call('GET', 'registry', null, { timeoutMs: 6000 });
     console.log(`\nProduct lines: ${r.products.map((p) => p.slug).join(', ')}`);
@@ -378,6 +386,189 @@ async function cmdRegistry() {
   fail('usage: ledger registry pull | push <file.json>');
 }
 
+
+async function cmdAmend() {
+  const id = rest[0];
+  if (!/^CR-\d{4,}$/.test(id || '') || !opt.patch || !opt.reason) fail('usage: ledger amend CR-NNNN --patch fix.json --reason "why"');
+  const patch = readJSON(opt.patch, null) || fail('patch file is not valid JSON');
+  const findings = scan(patch);
+  if (findings.length) fail(`sensitive data found: ${describe(findings)}`);
+  const r = await call('POST', 'amend', { cr_id: id, patch, reason: String(opt.reason) });
+  console.log(`✅ ${r.cr_id} amended: ${r.fields.join(', ')}`);
+}
+
+async function cmdNeeds() {
+  const r = await call('GET', 'needs');
+  if (!r.needs.length) { console.log('✅ Nothing needs the owner.'); return; }
+  for (const n of r.needs) {
+    console.log(`${n.sev === 'bad' ? '✕' : '⚠'} ${n.text}`);
+    for (const x of n.list.slice(0, 15)) console.log(`    ${typeof x === 'string' ? x : x.text}`);
+  }
+}
+
+// ---------- main-branch commits with no record ----------
+// config.main_repos: [{ path, ref, name }]; default = latcom-fix-main (origin/main) + via.one-website (main).
+function mainRepos() {
+  const list = config.main_repos || [
+    { path: path.join(HOME, 'latcom-fix-main'), ref: 'origin/main', name: 'latcom-fix', fetch: true },
+    { path: path.join(HOME, 'via.one-website'), ref: 'main', name: 'via.one-website' },
+  ];
+  return list.map((r) => ({ ...r, path: r.path.replace(/^~(?=\/)/, HOME) })).filter((r) => fs.existsSync(path.join(r.path, '.git')));
+}
+async function unrecordedMain({ since, until, fetchFirst }) {
+  const rec = await recorded(true);
+  const skipped = readJSON(skippedFile, []);
+  const out = [];
+  for (const r of mainRepos()) {
+    if (fetchFirst && r.fetch) { try { execFileSync('git', ['-C', r.path, 'fetch', '--quiet', 'origin'], { stdio: 'ignore', timeout: 60000 }); } catch (e) { /* offline: use what we have */ } }
+    let log = '';
+    try { log = git(r.path, ['log', r.ref, '--no-merges', `--since=${since}`, ...(until ? [`--until=${until}`] : []), '--format=%H%x09%cI%x09%s']); } catch (e) { continue; }
+    for (const ln of log.trim().split('\n').filter(Boolean)) {
+      const [sha, date, ...subj] = ln.split('\t');
+      if (rec.commits.some((c) => sha.startsWith(c) || c.startsWith(sha))) continue;
+      if (skipped.some((x) => x.key === sha)) continue;
+      out.push({ repo: r.name, sha, date, subject: subj.join('\t').slice(0, 120) });
+    }
+  }
+  return out;
+}
+
+async function cmdBackfill() {
+  if (rest[0] !== 'commits') fail('usage: ledger backfill commits [--since YYYY-MM-DD] [--until YYYY-MM-DD]');
+  const since = opt.since || '2026-11-01';
+  const list = await unrecordedMain({ since, until: opt.until, fetchFirst: true });
+  // Group by repo and ET day: one candidate skeleton per group, to be filled in by hand.
+  const groups = new Map();
+  for (const c of list) {
+    const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date(c.date));
+    const k = `${c.repo}|${day}`;
+    if (!groups.has(k)) groups.set(k, { repo: c.repo, day, commits: [] });
+    groups.get(k).commits.push(c);
+  }
+  const skeleton = [...groups.values()].sort((a, b) => a.day.localeCompare(b.day)).map((g) => ({
+    occurred_at: `${g.day}T17:00:00-05:00`,
+    product_line: '', features: [], kind: '', title: '', summary_plain: '', why: '', what_changed: [], status: '',
+    provenance: { source: 'backfill', confidence: 'medium', notes: [] },
+    commits: { [g.repo]: g.commits.map((c) => c.sha.slice(0, 12)) },
+    _subjects: g.commits.map((c) => `${c.sha.slice(0, 8)} ${c.subject}`),
+  }));
+  console.log(JSON.stringify(skeleton, null, 2));
+  console.error(`${list.length} unrecorded commits on main since ${since}, in ${skeleton.length} groups. Fill in each group (split or join as needed), delete "_subjects", then: ledger inbox add --draft <file>`);
+}
+
+async function cmdInbox() {
+  if (rest[0] === 'list') { const r = await call('GET', 'inbox'); for (const x of r.inbox) console.log(`${x.id} ${x.state.padEnd(9)} ${x.cr_id || '       '} ${x.title}`); return; }
+  if (rest[0] !== 'add' || !opt.draft) fail('usage: ledger inbox add --draft candidates.json · ledger inbox list');
+  let list;
+  try { list = JSON.parse(fs.readFileSync(opt.draft, 'utf8')); } catch (e) { fail(`draft is not valid JSON: ${e.message}`); }
+  if (!Array.isArray(list)) list = [list];
+  const s = currentSession();
+  const out = [];
+  for (const [i, d0] of list.entries()) {
+    const d = { ...d0 };
+    delete d._subjects;
+    if (!d.provenance || d.provenance.source !== 'backfill' || !['high', 'medium', 'low'].includes(d.provenance.confidence)) fail(`candidate ${i + 1}: provenance must be { source: "backfill", confidence: high|medium|low, notes: [...] }`);
+    let commits = [];
+    if (d.commits) {
+      const want = Object.values(d.commits).flat();
+      const res = resolveShas(want);
+      for (const sha of want) if (!res.has(sha)) fail(`candidate ${i + 1}: commit ${sha} not found`);
+      commits = [...res.values()];
+      delete d.commits;
+    }
+    const ev = { ...(d.evidence || {}) };
+    const auto = evidenceFor(commits);
+    if (auto.repos.length) ev.repos = auto.repos;
+    if (auto.migrations.length) ev.migrations = auto.migrations;
+    if (auto.flags.length) ev.flags = [...(ev.flags || []), ...auto.flags.filter((f) => !(ev.flags || []).some((x) => x.name === f.name))];
+    if (!auto.repos.length && !(d.artifacts || []).length && ev.no_code == null) ev.no_code = true;
+    d.evidence = ev;
+    const problem = mapCheck(d, ev);
+    if (problem) fail(`candidate ${i + 1} (${d.title}): ${problem}`);
+    d.session = { session_id: s.session_id, agent: 'claude-code', started_at: s.started_at, ended_at: new Date().toISOString(), directed_by: 'owner' };
+    d.provenance = { ...d.provenance, auto_fields: ['evidence.repos', 'evidence.migrations', 'evidence.flags', 'session'] };
+    d.attest_no_sensitive_data = true;
+    const findings = scan(d);
+    if (findings.length) fail(`candidate ${i + 1} (${d.title}): sensitive data found — ${describe(findings)}`);
+    out.push(d);
+  }
+  if (opt['dry-run']) { console.log(JSON.stringify(out, null, 2)); return; }
+  const r = await call('POST', 'inbox', { candidates: out }, { session: s.session_id, timeoutMs: 60000 });
+  console.log(`✅ ${r.added.length} added to the Inbox (${r.waiting} waiting)${r.skipped.length ? `; skipped ${r.skipped.map((x) => `#${x.i} (${x.why})`).join(', ')}` : ''}\n   ${BASE}/library/ledger/inbox`);
+}
+
+// ---------- nightly (launchd) ----------
+async function tg(text) {
+  const t = config.telegram;
+  if (!t || !t.token_file || !(t.chats || []).length) return;
+  let token = '';
+  try { const raw = fs.readFileSync(t.token_file.replace(/^~(?=\/)/, HOME), 'utf8'); token = t.token_key ? (raw.match(new RegExp(`${t.token_key}=["']?([^"'\n]+)`)) || [])[1] : raw.trim(); } catch (e) { return; }
+  if (!token) return;
+  for (const chat_id of t.chats) {
+    try { await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat_id, text: text.slice(0, 3900), disable_web_page_preview: true }) }); } catch (e) { /* ignore */ }
+  }
+}
+async function cmdNightly() {
+  const log = (m) => console.log(`${new Date().toISOString()} ${m}`);
+  const since = config.since || '2026-11-22T00:00:00-05:00';
+  // 1. commits on main with no record
+  const un = await unrecordedMain({ since, fetchFirst: true });
+  log(`unrecorded main commits since ${since}: ${un.length}`);
+  // 2. sessions where the stop hook gave up (new since the last run)
+  const stateFile = path.join(LDIR, 'nightly-state.json');
+  const st = readJSON(stateFile, { giveups_offset: 0 });
+  const ulog = path.join(LDIR, 'unrecorded.log');
+  const giveups = [];
+  if (fs.existsSync(ulog)) {
+    const all = fs.readFileSync(ulog, 'utf8').split('\n').filter(Boolean);
+    for (const ln of all.slice(-200)) { const [at, , ...items] = ln.split(' '); if (Date.now() - Date.parse(at) < 7 * 864e5) giveups.push({ at, items: items.join(' ') }); }
+    st.giveups_seen = all.length;
+  }
+  // 3. backup + independent check against heads kept on this Mac
+  const bdir = path.join(LDIR, 'backups');
+  fs.mkdirSync(bdir, { recursive: true });
+  const backup = { ok: false, count: 0, anchors: 0, problem: null };
+  try {
+    const text = await call('GET', 'export', null, { raw: true, timeoutMs: 60000 });
+    const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'ledger-check-'));
+    fs.writeFileSync(path.join(work, 'ledger.jsonl'), text);
+    const macAnchors = path.join(LDIR, 'anchors.jsonl');
+    if (fs.existsSync(macAnchors)) fs.copyFileSync(macAnchors, path.join(work, 'anchors.jsonl'));
+    const { Ledger } = require('../ledger/store');
+    const l = new Ledger(work);
+    backup.count = l.chain.count;
+    if (!l.chain.ok) backup.problem = `the server copy fails the Mac check at entry ${l.chain.brokenAt}${l.chain.anchorProblem ? `: ${l.chain.anchorProblem}` : ''}`;
+    else {
+      backup.ok = true;
+      const head = l.entries.length ? l.entries[l.entries.length - 1].hash : null;
+      const heads = fs.existsSync(macAnchors) ? fs.readFileSync(macAnchors, 'utf8').split('\n').filter(Boolean) : [];
+      if (!heads.some((h) => h.includes(`"date":"${day}"`))) fs.appendFileSync(macAnchors, `${JSON.stringify({ date: day, count: l.entries.length, head, at: new Date().toISOString() })}\n`);
+      fs.writeFileSync(path.join(bdir, `ledger-${day}.jsonl`), text);
+      for (const name of fs.readdirSync(bdir)) { const d = Date.parse(name.slice(7, 17)); if (!isNaN(d) && Date.now() - d > 30 * 864e5) fs.unlinkSync(path.join(bdir, name)); }
+    }
+    backup.anchors = fs.existsSync(macAnchors) ? fs.readFileSync(macAnchors, 'utf8').split('\n').filter(Boolean).length : 0;
+    fs.rmSync(work, { recursive: true, force: true });
+  } catch (e) { backup.problem = `could not fetch the ledger: ${e.message}`; }
+  log(`backup: ${backup.ok ? 'ok' : 'FAILED'} ${backup.count} entries, ${backup.anchors} Mac heads ${backup.problem || ''}`);
+  // 4. report to the server (feeds the Needs-you panel)
+  const subjects = un.map((c) => ({ ...c, subject: scan({ s: c.subject }).length ? '' : c.subject }));
+  await call('POST', 'needs', { unrecorded_commits: subjects, hook_giveups: giveups, backup }, { timeoutMs: 30000 });
+  writeJSON(stateFile, st);
+  // 5. Telegram only when something needs the owner
+  const newGiveups = (st.giveups_seen || 0) - (st.giveups_reported || 0);
+  if (!opt.quiet && (un.length || !backup.ok || newGiveups > 0)) {
+    const parts = [];
+    if (un.length) parts.push(`${un.length} commit(s) on main with no record (${[...new Set(un.map((c) => c.repo))].join(', ')})`);
+    if (newGiveups > 0) parts.push(`${newGiveups} session(s) ended without recording`);
+    if (!backup.ok) parts.push(`backup check FAILED: ${backup.problem}`);
+    await tg(`📒 Build Ledger nightly\n${parts.map((x) => `• ${x}`).join('\n')}\n${BASE}/library/ledger/needs`);
+  }
+  st.giveups_reported = st.giveups_seen || 0;
+  writeJSON(stateFile, st);
+  if (!backup.ok) process.exitCode = 1;
+}
+
 // ---------- hooks ----------
 const readStdin = () => { try { return JSON.parse(fs.readFileSync(0, 'utf8') || '{}'); } catch (e) { return {}; } };
 
@@ -427,7 +618,8 @@ async function hookCheck() {
 }
 
 (async () => {
-  const run = { help: cmdHelp, pending: cmdPending, record: cmdRecord, link: cmdLink, status: cmdStatus, skip: cmdSkip, show: cmdShow, verify: cmdVerify, registry: cmdRegistry };
+  const run = { help: cmdHelp, pending: cmdPending, record: cmdRecord, link: cmdLink, status: cmdStatus, skip: cmdSkip, show: cmdShow, verify: cmdVerify, registry: cmdRegistry,
+    amend: cmdAmend, needs: cmdNeeds, backfill: cmdBackfill, inbox: cmdInbox, nightly: cmdNightly };
   if (cmd === 'start') { try { hookStart(); } catch (e) { /* never break a session */ } return; }
   if (cmd === 'check') { try { await hookCheck(); } catch (e) { try { fs.appendFileSync(path.join(LDIR, 'check-errors.log'), `${new Date().toISOString()} ${e.message}\n`); } catch (x) { /* ignore */ } } return; }
   if (!run[cmd]) fail(`unknown command "${cmd}" — try: ledger help`);
