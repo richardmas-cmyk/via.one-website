@@ -6,6 +6,7 @@
 //   ledger record --draft d.json [--dry-run] [--session ID]
 //   ledger link CR-0007 --session-work   attach this session's unrecorded commits/pages to a record
 //   ledger link CR-0007 --commits latcom-fix:abc1234,def5678 [--artifact slug:2:flow] [--deploy prod:ID]
+//   ledger link CR-0007 --unlink abc1234 --note "attached by mistake: another session's work"
 //   ledger status CR-0007 staged|built_flag_off|live|abandoned [--deploy env:ID] [--note "..."]
 //   ledger skip --reason "memory notes only"   (this session's unrecorded work is not product work)
 //   ledger show CR-0007 · ledger verify · ledger registry pull|push <file.json>
@@ -94,9 +95,14 @@ function resolveShas(shas) {
 // ---------- sessions ----------
 const sessFile = (id) => path.join(SESS_DIR, `${String(id).replace(/[^A-Za-z0-9_-]/g, '')}.json`);
 function currentSession() {
-  const id = opt.session || process.env.LEDGER_SESSION;
-  if (id) { const s = readJSON(sessFile(id), null); if (!s) fail(`no ledger session ${id}`); return s; }
-  // The live session is the one whose transcript was written to most recently.
+  const id = opt.session || process.env.LEDGER_SESSION || process.env.CLAUDE_CODE_SESSION_ID;
+  if (id) {
+    const s = readJSON(sessFile(id), null);
+    if (s) return s;
+    if (opt.session || process.env.LEDGER_SESSION) fail(`no ledger session ${id}`);
+  }
+  // Fallback (old Claude Code without CLAUDE_CODE_SESSION_ID): the session whose
+  // transcript was written to most recently. Can pick the wrong one when two run at once.
   let best = null; let bestT = 0;
   for (const f of fs.existsSync(SESS_DIR) ? fs.readdirSync(SESS_DIR) : []) {
     const s = readJSON(path.join(SESS_DIR, f), null);
@@ -117,8 +123,32 @@ function sessionWork(s) {
   // (quiet commits, `git log`) — counted only if committed after the session started.
   const sure = new Set();
   for (const m of text.matchAll(/\[(?:detached HEAD|[^\]\s"\\]{1,100})(?: \(root-commit\))? ([0-9a-f]{7,12})\] /g)) sure.add(m[1]);
+  // Other ids count only when they appear in a tool's output (git log, quiet commits),
+  // not in Claude's own words, and not in the ledger's own listings (nightly, needs,
+  // pending, backfill), which print other sessions' commits.
+  // Only the output of git commands (commit, log, show, rev-parse) is read.
+  const toolText = [];
+  const gitCalls = new Set();
+  for (const ln of text.split('\n')) {
+    if (!ln.includes('"tool_use"') && !ln.includes('"tool_result"')) continue;
+    try {
+      const d = JSON.parse(ln);
+      for (const c of (d.message && Array.isArray(d.message.content) ? d.message.content : [])) {
+        if (c.type === 'tool_use' && c.input && typeof c.input.command === 'string'
+          && /(^|[\s;&|(])git(\s+-C\s+\S+)?\s+(commit|log|show|rev-parse)\b/.test(c.input.command) && !/(^|[;&|]\s*)(ledger|node\s+\S*ledger\.js)\s/.test(c.input.command)) gitCalls.add(c.id);
+        if (c.type !== 'tool_result' || !gitCalls.has(c.tool_use_id)) continue;
+        const parts = typeof c.content === 'string' ? [c.content] : (c.content || []).map((x) => x.text || '');
+        toolText.push(...parts);
+      }
+    } catch (e) { /* not JSON */ }
+  }
+  const scanText = toolText.join('\n')
+    .replace(/[\w.-]+ [0-9a-f]{8,12} · \d{4}-\d{2}-\d{2} · [^\n]*/g, '')
+    .replace(/^ *commit [\w.-]+ [0-9a-f]{8,12} .*$/gm, '')
+    .replace(/"_subjects": \[[^\]]*\]/g, '')
+    .replace(/"[0-9a-f]{12}"/g, '');
   const maybe = new Set();
-  for (const m of text.matchAll(/(?<![0-9a-zA-Z_-])([0-9a-f]{7,12})(?![0-9a-zA-Z_-])/g)) {
+  for (const m of scanText.matchAll(/(?<![0-9a-zA-Z_-])([0-9a-f]{7,12})(?![0-9a-zA-Z_-])/g)) {
     if (/[a-f]/.test(m[1]) && /\d/.test(m[1]) && !sure.has(m[1])) maybe.add(m[1]);
     if (maybe.size >= 3000) break;
   }
@@ -325,7 +355,7 @@ async function cmdRecord() {
 
 async function cmdLink() {
   const id = rest[0];
-  if (!/^CR-\d{4,}$/.test(id || '')) fail('usage: ledger link CR-NNNN --session-work | --commits repo:sha,sha | --artifact slug:v[:role] | --deploy env:ID');
+  if (!/^CR-\d{4,}$/.test(id || '')) fail('usage: ledger link CR-NNNN --session-work | --commits repo:sha,sha | --artifact slug:v[:role] | --deploy env:ID | --unlink sha,sha --note "why"');
   const body = { cr_id: id };
   let commits = [];
   let arts = [];
@@ -342,6 +372,7 @@ async function cmdLink() {
   for (const a of artList) { const h = artifactSha(a.library_slug, a.version); if (h) a.sha256 = h; }
   if (artList.length) body.artifacts = artList;
   if (opt.deploy) { const [env, ...idp] = String(opt.deploy).split(':'); body.deploys = [{ env, deploy_id: idp.join(':'), at: new Date().toISOString() }]; }
+  if (opt.unlink) body.unlink_commits = String(opt.unlink).split(',').filter(Boolean);
   if (opt.note) body.note = String(opt.note);
   const r = await call('POST', 'link', body);
   const c = readJSON(cacheFile, { commits: [], artifacts: [] });
@@ -620,6 +651,7 @@ async function hookCheck() {
 (async () => {
   const run = { help: cmdHelp, pending: cmdPending, record: cmdRecord, link: cmdLink, status: cmdStatus, skip: cmdSkip, show: cmdShow, verify: cmdVerify, registry: cmdRegistry,
     amend: cmdAmend, needs: cmdNeeds, backfill: cmdBackfill, inbox: cmdInbox, nightly: cmdNightly };
+  if (cmd === 'work') { const w = sessionWork(currentSession()); console.log(w.commits.map((c) => `${c.name} ${c.sha.slice(0, 8)}`).join('\n') || '(no commits)'); return; }
   if (cmd === 'start') { try { hookStart(); } catch (e) { /* never break a session */ } return; }
   if (cmd === 'check') { try { await hookCheck(); } catch (e) { try { fs.appendFileSync(path.join(LDIR, 'check-errors.log'), `${new Date().toISOString()} ${e.message}\n`); } catch (x) { /* ignore */ } } return; }
   if (!run[cmd]) fail(`unknown command "${cmd}" — try: ledger help`);

@@ -198,6 +198,11 @@ class Ledger {
         if (p.artifacts) cr.artifacts = [...(cr.artifacts || []), ...p.artifacts];
         if (p.repos) cr.evidence = { ...cr.evidence, repos: [...((cr.evidence && cr.evidence.repos) || []), ...p.repos] };
         if (p.deploys) cr.evidence = { ...cr.evidence, deploys: [...((cr.evidence && cr.evidence.deploys) || []), ...p.deploys] };
+        if (p.unlink_commits) {
+          const gone = (c) => p.unlink_commits.some((u) => c.startsWith(u));
+          cr.evidence = { ...cr.evidence, repos: ((cr.evidence && cr.evidence.repos) || []).map((r) => ({ ...r, commits: r.commits.filter((c) => !gone(c)) })).filter((r) => r.commits.length) };
+          cr.unlinked = [...(cr.unlinked || []), { commits: p.unlink_commits, note: p.note, at: e.at, actor: e.actor }];
+        }
       } else if (e.type === 'amend') {
         const cr = crs.get(p.cr_id);
         if (!cr) continue;
@@ -337,8 +342,16 @@ class Ledger {
       p.repos = body.repos;
     }
     if (body.deploys) p.deploys = body.deploys;
+    // A commit attached by mistake: a visible correction entry, never an edit.
+    if (body.unlink_commits) {
+      const list = [].concat(body.unlink_commits).map(String);
+      const mine = ((cr.evidence && cr.evidence.repos) || []).flatMap((r) => r.commits);
+      for (const c of list) if (!/^[0-9a-f]{7,40}$/.test(c) || !mine.some((m) => m.startsWith(c))) throw new LedgerError(`commit ${c} is not on ${cr.cr_id}`);
+      if (!body.note || String(body.note).trim().length < 8) throw new LedgerError('unlinking a commit needs a note saying why');
+      p.unlink_commits = list;
+    }
     if (body.note) p.note = String(body.note).slice(0, 300);
-    if (!p.artifacts && !p.repos && !p.deploys) throw new LedgerError('nothing to link');
+    if (!p.artifacts && !p.repos && !p.deploys && !p.unlink_commits) throw new LedgerError('nothing to link');
     return this.append('link', p, actor);
   }
 
