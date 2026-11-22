@@ -107,10 +107,26 @@ function currentSession() {
 function sessionWork(s) {
   let text = '';
   try { text = fs.readFileSync(s.transcript_path, 'utf8'); } catch (e) { return { commits: [], artifacts: [] }; }
-  const shas = new Set();
-  for (const m of text.matchAll(/\[(?:detached HEAD|[^\]\s"\\]{1,100})(?: \(root-commit\))? ([0-9a-f]{7,12})\] /g)) shas.add(m[1]);
-  const resolved = resolveShas([...shas]);
-  const commits = [...resolved.values()].filter((c, i, a) => a.findIndex((x) => x.sha === c.sha) === i);
+  // 1) `git commit` output lines — certain. 2) any other commit id the session showed
+  // (quiet commits, `git log`) — counted only if committed after the session started.
+  const sure = new Set();
+  for (const m of text.matchAll(/\[(?:detached HEAD|[^\]\s"\\]{1,100})(?: \(root-commit\))? ([0-9a-f]{7,12})\] /g)) sure.add(m[1]);
+  const maybe = new Set();
+  for (const m of text.matchAll(/(?<![0-9a-zA-Z_-])([0-9a-f]{7,12})(?![0-9a-zA-Z_-])/g)) {
+    if (/[a-f]/.test(m[1]) && /\d/.test(m[1]) && !sure.has(m[1])) maybe.add(m[1]);
+    if (maybe.size >= 3000) break;
+  }
+  const resolved = resolveShas([...sure, ...maybe]);
+  const since = Date.parse(s.started_at || 0) / 1000 - 60;
+  const commits = [];
+  for (const [short, c] of resolved) {
+    if (commits.some((x) => x.sha === c.sha)) continue;
+    if (!sure.has(short)) {
+      let t = 0; try { t = Number(git(c.repo, ['show', '-s', '--format=%ct', c.sha]).trim()); } catch (e) { continue; }
+      if (t < since) continue;
+    }
+    commits.push(c);
+  }
   const artifacts = new Set();
   for (const m of text.matchAll(/✅ ([a-z0-9][a-z0-9-]{1,60}) is now at version (\d{1,4})/g)) artifacts.add(`${m[1]}@${m[2]}`);
   return { commits, artifacts: [...artifacts] };
