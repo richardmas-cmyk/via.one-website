@@ -50,6 +50,14 @@ async function call(method, route, body) {
   const html = fs.readFileSync(file, 'utf8');
   const r = await call('POST', 'items', { slug: opt.slug, title: opt.title, summary: opt.summary, category: opt.category, note: opt.note, date: opt.date, html });
   console.log(`✅ ${r.slug} is now at version ${r.v}\n   sign-in: ${r.url}\n   outside: ${r.shareUrl}`);
+  // Build Ledger: note the page so this session's Change Record picks it up.
+  try {
+    const ldir = process.env.LEDGER_HOME || path.join(os.homedir(), '.ledger');
+    fs.mkdirSync(ldir, { recursive: true });
+    const sha256 = `sha256:${require('crypto').createHash('sha256').update(html).digest('hex')}`;
+    fs.appendFileSync(path.join(ldir, 'artifacts.jsonl'), `${JSON.stringify({ slug: r.slug, v: r.v, sha256, at: new Date().toISOString(), file: path.resolve(file) })}\n`);
+    console.log('   ledger:  record it with `ledger record --draft <file.json>` (or `ledger link CR-NNNN --session-work`)');
+  } catch (e) { /* the ledger note is best-effort */ }
   if (fs.existsSync(path.dirname(backupDir))) {
     const dest = path.join(backupDir, r.slug, `${r.slug}_v${r.v}.html`);
     fs.mkdirSync(path.dirname(dest), { recursive: true });

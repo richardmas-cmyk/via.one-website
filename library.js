@@ -130,7 +130,7 @@ function shell({ title, body, nonce, signedIn }) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow"><title>${esc(title)}</title><link rel="icon" href="/favicon.png"><style>${SHELL_CSS}</style></head><body>
 <header><div class="in"><a class="brand" href="/library" style="color:inherit;text-decoration:none"><img src="/logo-light.png" alt="Via One"><b>Library</b></a>
-${signedIn ? '<form method="post" action="/library/logout"><button type="submit">Sign out</button></form>' : ''}</div></header>
+${signedIn ? '<div class="row"><a class="btn alt" href="/library/ledger" style="padding:8px 14px;font-size:1rem">Build Ledger</a><form method="post" action="/library/logout"><button type="submit">Sign out</button></form></div>' : ''}</div></header>
 <main class="in">${body}</main>${nonce ? `<script nonce="${nonce}">
 document.addEventListener('click',function(e){var b=e.target.closest('[data-copy]');if(!b)return;var f=document.getElementById(b.getAttribute('data-copy'));f.select();
 var done=function(){b.textContent='\\u2705 Copied'};if(navigator.clipboard){navigator.clipboard.writeText(f.value).then(done,function(){document.execCommand('copy');done()})}else{document.execCommand('copy');done()}});
@@ -196,12 +196,12 @@ function renderDoc(html, { title, bar }) {
 ${html}
 </body></html>`;
 }
-function sendDoc(res, item, ver, { signedIn }) {
+function sendDoc(res, item, ver, { signedIn, embed }) {
   let html;
   try { html = fs.readFileSync(filePath(item.slug, ver.v), 'utf8'); } catch (e) { return false; }
   const A = 'color:#fff;font:inherit;text-decoration:underline;text-underline-offset:3px';
   const others = item.versions.filter((x) => x.v !== ver.v).map((x) => `<a style="${A}" href="/library/${esc(item.slug)}/v${x.v}">v${x.v}</a>`).join(' ');
-  const bar = signedIn ? `<nav aria-label="Via One Library" style="all:initial;display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center;padding:12px 16px;background:#0A1628;color:#fff;font:700 17px/1.35 system-ui,-apple-system,'Segoe UI',sans-serif">
+  const bar = signedIn && !embed ? `<nav aria-label="Via One Library" style="all:initial;display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center;padding:12px 16px;background:#0A1628;color:#fff;font:700 17px/1.35 system-ui,-apple-system,'Segoe UI',sans-serif">
 <a style="${A}" href="/library">← Library</a><span style="font:inherit;color:#fff">${esc(item.title)} · version ${ver.v} of ${latest(item).v} · ${niceDate(ver.date)}</span>${others ? `<span style="font:inherit;color:#fff">Other versions: ${others}</span>` : ''}</nav>` : '';
   res.set({
     // The page runs in its own sandbox: it cannot read this site's cookies or storage.
@@ -333,9 +333,17 @@ module.exports = function mountLibrary(app) {
     const m = /^v(\d{1,4})$/.exec(req.params.ver || '');
     if (req.params.ver && !m) return next();
     const ver = m ? item.versions.find((x) => x.v === Number(m[1])) : latest(item);
-    if (!ver || !sendDoc(res, item, ver, { signedIn: true })) return next();
+    if (!ver || !sendDoc(res, item, ver, { signedIn: true, embed: req.query.embed === '1' })) return next();
     return undefined;
   });
 
   app.use('/library', router);
 };
+
+// Shared with the Build Ledger (ledger/index.js): same sign-in, same volume.
+module.exports.DIR = DIR;
+module.exports.readItems = readItems;
+module.exports.filePath = filePath;
+module.exports.sessionEmail = sessionEmail;
+module.exports.sameText = sameText;
+module.exports.configured = () => Boolean(SECRET);

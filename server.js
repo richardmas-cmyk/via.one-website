@@ -79,7 +79,10 @@ app.post('/api/contact', express.json({ limit: '20kb' }), async (req, res) => {
 });
 
 // Private reference library (pages on a volume, not in this repo). See library.js.
-require('./library')(app);
+// The Build Ledger mounts first so /library/ledger and /library/api/ledger reach it.
+const library = require('./library');
+require('./ledger')(app, library);
+library(app);
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
