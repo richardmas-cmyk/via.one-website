@@ -206,7 +206,9 @@ function evidenceFor(commits) {
     const files = new Set(); let ins = 0; let del = 0;
     for (const sha of ordered) {
       for (const ln of git(repo, ['show', '--numstat', '--format=', sha]).trim().split('\n')) {
-        const [a, d, f] = ln.split('\t'); if (!f) continue;
+        const [a, d, raw] = ln.split('\t'); if (!raw) continue;
+        // Renames come as "dir/{old => new}" or "old => new": keep the new path only.
+        const f = raw.replace(/\{[^{}]* => ([^{}]*)\}/, '$1').replace(/^.* => /, '').replace(/\/\//g, '/');
         files.add(f); ins += Number(a) || 0; del += Number(d) || 0;
       }
       for (const f of git(repo, ['show', '--diff-filter=A', '--name-only', '--format=', sha]).trim().split('\n')) {
